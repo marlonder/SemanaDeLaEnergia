@@ -1,0 +1,91 @@
+version: "3.8"
+
+# Proyecto pensado para vivir en: /home/marlon/Projects/Complexivo
+# Estructura esperada:
+# /home/marlon/Projects/Complexivo
+# ├── docker-compose.yml
+# ├── .env
+# ├── docker/
+# │   ├── php/(Dockerfile, php.ini)
+# │   └── nginx/(default.conf)
+# └── src/                <-- aquí va tu código (Laravel, Symfony, PHP puro, etc.)
+
+services:
+  app:
+    build:
+      context: ./docker/php
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: complexivo_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+    networks:
+      - complexivo_net
+    depends_on:
+      - db
+
+  webserver:
+    image: nginx:stable-alpine
+    container_name: complexivo_webserver
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - complexivo_net
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: complexivo_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-complexivo}
+      MYSQL_USER: ${DB_USERNAME:-complexivo_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - complexivo_net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: complexivo_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    networks:
+      - complexivo_net
+    depends_on:
+      - db
+
+  frontend:
+    image: nginx:stable-alpine
+    container_name: complexivo_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8090}:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - complexivo_net   
+
+networks:
+  complexivo_net:
+    driver: bridge
+
+volumes:
+  db_data:
