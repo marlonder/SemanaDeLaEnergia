@@ -1,0 +1,46 @@
+CREATE DATABASE IF NOT EXISTS proyectos_db;
+USE proyectos_db;
+
+-- Tabla de roles (opcional pero recomendable)
+CREATE TABLE rol (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Tabla usuario
+CREATE TABLE usuario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100),
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    foto_path VARCHAR(255),
+    id_rol INT DEFAULT NULL,
+    estado BOOLEAN DEFAULT TRUE,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol) REFERENCES rol(id)
+);
+
+-- Tabla categoria
+CREATE TABLE categoria (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL
+);
+
+-- Tabla proyecto
+CREATE TABLE proyecto (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    link VARCHAR(255),
+    anio INT,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id_categoria INT NOT NULL,
+    id_usuario INT NOT NULL,
+    CONSTRAINT fk_proyecto_categoria FOREIGN KEY (id_categoria) REFERENCES categoria(id),
+    CONSTRAINT fk_proyecto_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id)
+);
+
+-- Datos base de ejemplo para roles
+INSERT INTO rol (nombre) VALUES ('admin'), ('usuario');

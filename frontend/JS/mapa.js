@@ -22,10 +22,10 @@ async function cargarMapa(archivoGeoJson) {
     .attr('data-name', d => d.properties.name)
     .attr('d', path)
     .on('mouseenter', (evento, d) => {
-      infoPais.textContent = d.properties.name;
+      infoPais.textContent = `Proyectos de ${d.properties.name}`;
     })
     .on('mouseleave', () => {
-      infoPais.textContent = 'Pasa el mouse sobre un país';
+      infoPais.textContent = 'Proyectos de la Excelencia';
     })
     .on('click', function () {
       this.classList.toggle('seleccionado');

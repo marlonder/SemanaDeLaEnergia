@@ -5,20 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mapa de América Latina</title>
   <link rel="stylesheet" href="CSS/style.css">
-  <!-- D3 se carga desde CDN, sin npm ni build -->
+  <link rel="stylesheet" href="CSS/header_footer.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 </head>
 <body>
-  <h1>México, Centroamérica y Sudamérica</h1>
+   <div id="header"></div>
+  
 
   <div class="layout">
-      <div id="contenedor-mapa"></div>
+    <div id="contenedor-mapa"></div>
+
     <aside class="panel-info">
-      <h2 id="info-pais">Pasa el mouse<br>sobre un país</h2>
+      <h2 id="info-pais" class="panel-info__titulo">Proyectos de la Excelencia</h2>
+      <div id="info-contenido" class="panel-info__contenido vacio">
+        Aún no hay contenido cargado para este país.
+      </div>
     </aside>
-
   </div>
-
+  <div id="footer"></div>
   <script src="JS/mapa.js"></script>
-</body
+  <script src="JS/includes.js"></script>
+</body>
 </html>

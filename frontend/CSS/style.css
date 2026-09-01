@@ -5,11 +5,9 @@ body {
   margin: 0;
   padding: 2rem 1rem;
 }
-
 h1 {
   margin-bottom: 1.5rem;
 }
-
 .layout {
   display: flex;
   align-items: flex-start;
@@ -19,35 +17,57 @@ h1 {
   margin: 0 auto;
 }
 
+/* --- Card del panel de información --- */
 .panel-info {
   flex: 1;
-  min-width: 220px;
+  min-width: 320px;   /* antes 260px */
+  max-width: 380px;   /* le damos un tope para que no se estire demasiado */
+  width: 100%;
   background: #fff;
-  border-radius: 10px;
-  padding: 1.5rem;
+  border-radius: 0 px;
+  padding: 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  text-align: left;
-  position: sticky;
+  text-align: center;
+  position: static;
   top: 2rem;
+  overflow: hidden;
+  margin-top: 4rem;
 }
 
-#info-pais {
+
+.panel-info__titulo {
   margin: 0;
-  font-size: 1.4rem;
-  color: #2e7d32;
+  padding: 1rem 1.5rem;
+  font-size: 1.3rem;
+  color: #ffffff;
+  background: var(--sde-navy-dark);
 }
+
+.panel-info__contenido {
+  padding: 1.5rem;
+  font-size: 1rem;
+  color: #444;
+  min-height: 120px; /* espacio reservado mientras no hay contenido */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-info__contenido.vacio {
+  color: #999;
+  font-style: italic;
+}
+/* --- Fin card --- */
 
 #contenedor-mapa {
   flex: 10;
   max-width: 550px;
 }
-
 #contenedor-mapa svg {
   width: 100%;
   height: auto;
   display: block;
 }
-
 #contenedor-mapa path {
   fill: #cccccc;
   stroke: #ffffff;
@@ -55,16 +75,13 @@ h1 {
   cursor: pointer;
   transition: fill 0.15s ease;
 }
-
 #contenedor-mapa path:hover {
   fill: #2e7d32;
 }
-
 #contenedor-mapa path.seleccionado {
-  fill: #1565c0;
+  fill: var(--sde-navy-dark);
 }
 
-/* En pantallas angostas, apila el panel encima del mapa */
 @media (max-width: 700px) {
   .layout {
     flex-direction: column;
