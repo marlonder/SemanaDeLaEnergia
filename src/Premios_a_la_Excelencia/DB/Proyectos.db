@@ -1,0 +1,110 @@
+CREATE DATABASE IF NOT EXISTS SemanaDelaEnergia
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+USE SemanaDelaEnergia;
+
+
+-- =========================================================
+-- TABLA: usuario
+-- =========================================================
+
+CREATE TABLE usuario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100),
+    password_hash VARCHAR(255) NOT NULL,
+    estado BOOLEAN DEFAULT TRUE,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- =========================================================
+-- TABLA: pais
+-- =========================================================
+
+CREATE TABLE pais (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE
+);
+
+
+-- =========================================================
+-- TABLA: categoria
+-- =========================================================
+
+CREATE TABLE categoria (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE
+);
+
+
+-- =========================================================
+-- TABLA: sub_categoria
+-- =========================================================
+
+CREATE TABLE sub_categoria (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    id_categoria INT NOT NULL,
+
+    CONSTRAINT fk_subcategoria_categoria
+        FOREIGN KEY (id_categoria)
+        REFERENCES categoria(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+);
+
+
+-- =========================================================
+-- TABLA: proyecto
+-- =========================================================
+
+CREATE TABLE proyecto (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    titulo VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    organizacion VARCHAR(200),
+
+    link VARCHAR(255),
+    red_social VARCHAR(255),
+    imagen_path VARCHAR(255),
+
+    anio INT,
+
+    estado BOOLEAN DEFAULT TRUE,
+
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    id_pais INT NOT NULL,
+    id_categoria INT NOT NULL,
+    id_subcategoria INT NOT NULL,
+    id_usuario INT NOT NULL,
+
+    CONSTRAINT fk_proyecto_pais
+        FOREIGN KEY (id_pais)
+        REFERENCES pais(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_proyecto_categoria
+        FOREIGN KEY (id_categoria)
+        REFERENCES categoria(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_proyecto_subcategoria
+        FOREIGN KEY (id_subcategoria)
+        REFERENCES sub_categoria(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_proyecto_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuario(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+);
