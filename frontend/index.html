@@ -9,20 +9,40 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 </head>
 <body>
-   <div id="header"></div>
-  
+  <div id="header"></div>
 
   <div class="layout">
-    <div id="contenedor-mapa"></div>
+    <div class="mapa-wrapper">
+      <button id="btn-refrescar" class="btn-refrescar" title="Refrescar mapa">
+        <span class="btn-refrescar__icono">⟳</span>
+        Refrescar
+      </button>
 
-    <aside class="panel-info">
+      <div id="contenedor-mapa"></div>
+
+      <!-- Popover del Caribe: vive DENTRO de mapa-wrapper para poder posicionarse relativo a él -->
+      <div id="popover-caribe" class="popover-caribe">
+        <div class="popover-caribe__flecha"></div>
+        <button id="popover-caribe-cerrar" class="popover-caribe__cerrar" aria-label="Cerrar">&times;</button>
+        <h3 class="popover-caribe__titulo">El Caribe</h3>
+        <div id="mini-mapa-caribe" class="popover-caribe__mapa"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal normal de info de país (se mantiene igual) -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div class="panel-info" id="panel-info">
+      <button id="modal-cerrar" class="panel-info__cerrar" aria-label="Cerrar">&times;</button>
       <h2 id="info-pais" class="panel-info__titulo">Proyectos de la Excelencia</h2>
       <div id="info-contenido" class="panel-info__contenido vacio">
         Aún no hay contenido cargado para este país.
       </div>
-    </aside>
+    </div>
   </div>
+
   <div id="footer"></div>
+  <script src="JS/modal.js"></script>
   <script src="JS/mapa.js"></script>
   <script src="JS/includes.js"></script>
 </body>

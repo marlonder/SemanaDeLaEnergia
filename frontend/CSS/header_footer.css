@@ -1,5 +1,6 @@
 /* ============================================================
    HEADER + FOOTER — XI Semana de la Energía / OLACDE
+   (CSS purgado: solo reglas usadas por el HTML actual)
    ============================================================ */
 
 :root{
@@ -21,7 +22,7 @@
 .sde-header *, .sde-footer *{
   box-sizing: border-box;
 }
-.sde-header ul, .sde-footer ul{
+.sde-footer ul{
   list-style: none;
   margin: 0;
   padding: 0;
@@ -70,177 +71,10 @@
   width: auto;
 }
 
-/* Nav */
-.sde-header__nav{
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-.sde-header__menu{
-  display: flex;
-  align-items: center;
-  gap: 28px;
-}
-.sde-header__menu-item{
-  position: relative;
-}
-.sde-header__menu-item > a{
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--sde-navy);
-  padding: 8px 0;
-  display: inline-block;
-  transition: color .2s ease;
-}
-.sde-header__menu-item > a:hover{
-  color: var(--sde-red);
-}
-
-/* Submenú desplegable */
-.sde-header__submenu{
-  position: absolute;
-  top: 100%;
-  left: 0;
-  min-width: 220px;
-  background: var(--sde-white);
-  border: 1px solid var(--sde-border);
-  border-radius: 6px;
-  box-shadow: 0 10px 30px rgba(13, 35, 64, .12);
-  padding: 8px 0;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(6px);
-  transition: all .18s ease;
-}
-.sde-header__menu-item--has-dropdown:hover .sde-header__submenu,
-.sde-header__menu-item--has-dropdown:focus-within .sde-header__submenu{
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-.sde-header__submenu li a{
-  display: block;
-  padding: 9px 18px;
-  font-size: 14px;
-  color: var(--sde-navy);
-  white-space: nowrap;
-}
-.sde-header__submenu li a:hover{
-  background: #f2f5fa;
-  color: var(--sde-red);
-}
-
-/* Acciones */
-.sde-header__actions{
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-shrink: 0;
-}
-
-.sde-header__cta{
-  background: var(--sde-navy);
-  color: var(--sde-white);
-  font-size: 14px;
-  font-weight: 600;
-  padding: 11px 22px;
-  border-radius: 6px;
-  white-space: nowrap;
-  transition: background .2s ease;
-}
-.sde-header__cta:hover{
-  background: var(--sde-blue);
-}
-
-/* Selector de idioma */
-.sde-header__lang{
-  position: relative;
-}
-.sde-header__lang-btn{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--sde-white);
-  border: 1px solid var(--sde-border);
-  border-radius: 6px;
-  padding: 9px 14px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--sde-navy);
-  cursor: pointer;
-}
-.sde-header__lang-flag{
-  width: 18px;
-  height: 12px;
-  object-fit: cover;
-}
-.sde-header__lang-arrow{
-  margin-left: 2px;
-  color: var(--sde-gray-text);
-}
-.sde-header__lang-menu{
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 6px;
-  min-width: 140px;
-  background: var(--sde-white);
-  border: 1px solid var(--sde-border);
-  border-radius: 6px;
-  box-shadow: 0 10px 30px rgba(13, 35, 64, .12);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(6px);
-  transition: all .18s ease;
-}
-.sde-header__lang:hover .sde-header__lang-menu,
-.sde-header__lang:focus-within .sde-header__lang-menu{
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-.sde-header__lang-menu li a{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
-  font-size: 14px;
-  color: var(--sde-navy);
-}
-.sde-header__lang-menu li a:hover{
-  background: #f2f5fa;
-  color: var(--sde-red);
-}
-
-/* Botón hamburguesa (oculto en escritorio) */
-.sde-header__burger{
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  width: 32px;
-  height: 32px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-.sde-header__burger span{
-  display: block;
-  height: 2px;
-  width: 100%;
-  background: var(--sde-navy);
-  border-radius: 2px;
-}
-
 /* Responsive */
 @media (max-width: 960px){
-  .sde-header__nav{ display: none; }
-  .sde-header__burger{ display: flex; }
   .sde-header__logo--main{ height: 36px; }
   .sde-header__logo--olacde{ height: 26px; }
-  .sde-header__cta{ padding: 9px 16px; font-size: 13px; }
-  .sde-header__lang span{ display: none; }
 }
 
 /* ============================================================

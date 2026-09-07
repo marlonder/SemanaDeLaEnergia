@@ -3,64 +3,19 @@ body {
   text-align: center;
   background: #f4f4f4;
   margin: 0;
-  padding: 2rem 1rem;
 }
-h1 {
-  margin-bottom: 1.5rem;
-}
+
 .layout {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 10rem;
-  max-width: 950px;
-  margin: 0 auto;
-}
-
-/* --- Card del panel de información --- */
-.panel-info {
-  flex: 1;
-  min-width: 320px;   /* antes 260px */
-  max-width: 380px;   /* le damos un tope para que no se estire demasiado */
-  width: 100%;
-  background: #fff;
-  border-radius: 0 px;
-  padding: 0;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  position: static;
-  top: 2rem;
-  overflow: hidden;
-  margin-top: 4rem;
-}
-
-
-.panel-info__titulo {
-  margin: 0;
-  padding: 1rem 1.5rem;
-  font-size: 1.3rem;
-  color: #ffffff;
-  background: var(--sde-navy-dark);
-}
-
-.panel-info__contenido {
-  padding: 1.5rem;
-  font-size: 1rem;
-  color: #444;
-  min-height: 120px; /* espacio reservado mientras no hay contenido */
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: 950px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
 }
-
-.panel-info__contenido.vacio {
-  color: #999;
-  font-style: italic;
-}
-/* --- Fin card --- */
 
 #contenedor-mapa {
-  flex: 10;
+  width: 100%;
   max-width: 550px;
 }
 #contenedor-mapa svg {
@@ -75,6 +30,22 @@ h1 {
   cursor: pointer;
   transition: fill 0.15s ease;
 }
+
+
+#contenedor-mapa circle.isla-punto {
+  fill: #cccccc;
+  stroke: #ffffff;
+  stroke-width: 0.8;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+#contenedor-mapa circle.isla-punto:hover {
+  fill: #2e7d32;
+}
+#contenedor-mapa circle.isla-punto.seleccionado {
+  fill: var(--sde-navy-dark);
+}
+
 #contenedor-mapa path:hover {
   fill: #2e7d32;
 }
@@ -82,14 +53,350 @@ h1 {
   fill: var(--sde-navy-dark);
 }
 
-@media (max-width: 700px) {
+/* ============================================================
+   MODAL — reemplaza al panel-info fijo
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 35, 64, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+  padding: 1rem;
+}
+.modal-overlay.activo {
+  opacity: 1;
+  visibility: visible;
+}
+
+.panel-info {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  text-align: center;
+  transform: translateY(20px);
+  transition: transform 0.2s ease;
+}
+.modal-overlay.activo .panel-info {
+  transform: translateY(0);
+}
+
+.panel-info__cerrar {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: #fff;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.panel-info__titulo {
+  margin: 0;
+  padding: 1rem 2.5rem 1rem 1.5rem;
+  font-size: 1.3rem;
+  color: #ffffff;
+  background: var(--sde-navy-dark);
+}
+
+.panel-info__contenido {
+  padding: 1.5rem;
+  font-size: 1rem;
+  color: #444;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-info__contenido.vacio {
+  color: #999;
+  font-style: italic;
+}
+
+/* ============================================================
+   RESPONSIVE — Tablets (incluye iPad Pro 13"/12.9": 1024–1366px)
+   ============================================================ */
+@media (min-width: 768px) and (max-width: 1366px) {
   .layout {
-    flex-direction: column;
-    align-items: center;
+    max-width: 700px;
+    padding: 3rem 2rem;
+  }
+  #contenedor-mapa {
+    max-width: 650px;
   }
   .panel-info {
-    position: static;
-    width: 100%;
-    text-align: center;
+    max-width: 460px;
   }
+  .panel-info__titulo {
+    font-size: 1.5rem;
+  }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+  .panel-info {
+    max-width: 100%;
+  }
+}
+
+
+/* ================================
+    Boton de refrescar
+  =================================
+*/
+
+.mapa-wrapper {
+  position: relative; /* clave: el popover se posiciona respecto a esto */
+  width: 100%;
+  max-width: 550px;
+  text-align: left;
+}
+
+
+.btn-refrescar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+  margin-right: auto;   /* 👈 evita que se centre si el padre usa flex */
+  background: var(--sde-navy-dark, #0a1c33);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.btn-refrescar:hover {
+  background: var(--sde-blue, #1a3d6d);
+}
+.btn-refrescar:active {
+  transform: scale(0.97);
+}
+
+/* El ícono, no el botón */
+.btn-refrescar__icono {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 1;
+}
+.btn-refrescar__icono.girando {
+  animation: girar 0.5s ease;
+}
+
+@keyframes girar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+
+/* ============================================================
+   POPOVER DEL CARIBE
+   ============================================================ */
+.popover-caribe {
+  position: absolute;
+  width: 340px;
+  max-width: 90vw;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  padding: 0.75rem;
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95);
+  transform-origin: left center;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+.popover-caribe.activo {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.popover-caribe__flecha {
+  position: absolute;
+  left: -8px;
+  top: 23px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  transform: rotate(45deg);
+  box-shadow: -2px 2px 4px rgba(0,0,0,0.05);
+}
+
+.popover-caribe__cerrar {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #999;
+  cursor: pointer;
+}
+.popover-caribe__cerrar:hover {
+  color: #333;
+}
+
+.popover-caribe__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sde-navy-dark, #0a1c33);
+  text-align: center;
+}
+
+.popover-caribe__mapa {
+  width: 100%;
+}
+.popover-caribe__mapa svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.popover-caribe__mapa path,
+.popover-caribe__mapa circle {
+  fill: #cccccc;
+  stroke: #ffffff;
+  stroke-width: 0.8;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.popover-caribe__mapa path:hover,
+.popover-caribe__mapa circle:hover {
+  fill: #2e7d32;
+}
+.popover-caribe__mapa path.seleccionado,
+.popover-caribe__mapa circle.seleccionado {
+  fill: var(--sde-navy-dark);
+}
+
+/* Punto "Caribe" en el mapa principal */
+#contenedor-mapa .punto-caribe {
+  fill: #cccccc;
+  stroke: #ffffff;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+#contenedor-mapa .punto-caribe:hover {
+  fill: #2e7d32;
+}
+#contenedor-mapa .punto-caribe-label {
+  font-size: 9px;
+  font-weight: 600;
+  fill: var(--sde-navy-dark, #0a1c33);
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+/* Tablets: popover un poco más grande */
+@media (min-width: 768px) and (max-width: 1366px) {
+  .popover-caribe {
+    width: 400px;
+  }
+}
+
+/* Móvil: si no cabe al lado, que se centre arriba del punto en vez de a un lado */
+@media (max-width: 480px) {
+  .popover-caribe {
+    left: 5% !important;
+    right: 5%;
+    width: 90% !important;
+  }
+  .popover-caribe__flecha {
+    display: none;
+  }
+}
+
+
+/* Estrella sobre Ecuador */
+.punto-estrella {
+  font-size: 22px;
+  fill: #f2c744;
+  stroke: #7a5b00;
+  stroke-width: 0.5px;
+  cursor: pointer;
+  paint-order: stroke fill;
+}
+.punto-estrella:hover {
+  fill: #ffdd66;
+}
+
+/* Lista de proyectos dentro del modal */
+.lista-proyectos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lista-proyectos__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e5e5e5;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.lista-proyectos__item:hover {
+  background-color: #f5f5f5;
+}
+.lista-proyectos__nombre {
+  font-weight: 600;
+}
+.lista-proyectos__categoria {
+  font-size: 0.85em;
+  color: #777;
+}
+
+/* Detalle de un proyecto */
+.detalle-proyecto {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.detalle-proyecto__foto {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.detalle-proyecto__descripcion {
+  line-height: 1.4;
+}
+.detalle-proyecto__qr {
+  width: 130px;
+  height: 130px;
+  align-self: center;
+}
+.btn-regresar {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+.btn-regresar:hover {
+  background-color: #f0f0f0;
 }
