@@ -84,6 +84,7 @@
   background: var(--sde-navy-dark);
   color: var(--sde-white);
   padding: 56px 24px 24px;
+  flex-shrink: 0;
 }
 
 .sde-footer__container{
