@@ -2,12 +2,14 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../model/Categoria.php';
 require_once __DIR__ . '/../model/subcategoria.php';
+require_once __DIR__ . '/../model/Tipo_entidad.php';
 
 class CategoriaController
 {
     private $db;
     private $categoria;
     private $subCategoria;
+    private $tipoEntidad;
 
     public function __construct()
     {
@@ -15,6 +17,7 @@ class CategoriaController
         $this->db = $conexion->conectar();
         $this->categoria = new Categoria($this->db);
         $this->subCategoria = new SubCategoria($this->db);
+        $this->tipoEntidad = new TipoEntidad($this->db); 
     }
 
     // ---------- CATEGORÍA ----------
@@ -28,6 +31,12 @@ class CategoriaController
     {
         return $this->categoria->obtenerPorId($id);
     }
+
+    public function listarTiposEntidad()
+    {
+        return $this->tipoEntidad->listar();
+    }
+
 
     public function crearCategoria($nombre)
     {
@@ -94,7 +103,7 @@ class CategoriaController
         return $this->subCategoria->obtenerPorId($id);
     }
 
-    public function crearSubCategoria($nombre, $idCategoria)
+    public function crearSubCategoria($nombre, $idCategoria, $idTipoEntidad)
     {
         $nombre = trim($nombre);
 
@@ -104,14 +113,17 @@ class CategoriaController
         if (!$idCategoria || !$this->categoria->obtenerPorId($idCategoria)) {
             return ['ok' => false, 'msg' => 'Debe seleccionar una categoría válida.'];
         }
+        if (!$idTipoEntidad || !$this->tipoEntidad->obtenerPorId($idTipoEntidad)) {
+            return ['ok' => false, 'msg' => 'Debe seleccionar un tipo de entidad válido.'];
+        }
 
-        if ($this->subCategoria->crear($nombre, $idCategoria)) {
+        if ($this->subCategoria->crear($nombre, $idCategoria, $idTipoEntidad)) {
             return ['ok' => true, 'msg' => 'Subcategoría creada correctamente.'];
         }
         return ['ok' => false, 'msg' => 'Ocurrió un error al crear la subcategoría.'];
     }
 
-    public function actualizarSubCategoria($id, $nombre, $idCategoria)
+    public function actualizarSubCategoria($id, $nombre, $idCategoria, $idTipoEntidad)
     {
         $nombre = trim($nombre);
 
@@ -124,8 +136,11 @@ class CategoriaController
         if (!$idCategoria || !$this->categoria->obtenerPorId($idCategoria)) {
             return ['ok' => false, 'msg' => 'Debe seleccionar una categoría válida.'];
         }
+        if (!$idTipoEntidad || !$this->tipoEntidad->obtenerPorId($idTipoEntidad)) {
+            return ['ok' => false, 'msg' => 'Debe seleccionar un tipo de entidad válido.'];
+        }
 
-        if ($this->subCategoria->actualizar($id, $nombre, $idCategoria)) {
+        if ($this->subCategoria->actualizar($id, $nombre, $idCategoria, $idTipoEntidad)) {
             return ['ok' => true, 'msg' => 'Subcategoría actualizada correctamente.'];
         }
         return ['ok' => false, 'msg' => 'Ocurrió un error al actualizar la subcategoría.'];

@@ -1,24 +1,61 @@
 const contenedor = document.getElementById('contenedor-mapa');
+const wrapperMapa = document.querySelector('.mapa-wrapper');
 
 const ANCHO = 550;
 const ALTO = 750;
 
 const CARIBE_PUNTO = [-75, 19];
-
-// 👉 NUEVO: nombre exacto del país que va a tener proyectos por ahora
 const PAIS_CON_PROYECTOS = 'Ecuador';
 
+let svgPrincipal = null;
+let grupoMapa = null;      // 👉 NUEVO: <g> que se transforma con el zoom
+let zoomMapa = null;       // 👉 NUEVO: comportamiento de zoom de d3
+let proyeccionMapa = null; // 👉 NUEVO: guardamos proyección y path para
+let pathMapa = null;       //    poder calcular el zoom al Caribe después
+let datosCaribe = null;    // 👉 NUEVO: geojson del Caribe, para calcular límites
+
 async function cargarMapa() {
-  const continental = await d3.json('DATA/america_unida.geo.json');
+  const [continental, caribe] = await Promise.all([
+    d3.json('DATA/america_unida.geo.json'),
+    d3.json('DATA/caribe.geo.json')
+  ]);
+
+  
+  datosCaribe = caribe;
+
+  // le pasamos los datos del Caribe a modal.js para que ya los tenga listos
+  // (evita que modal.js tenga que volver a pedirlos por red)
+  if (window.inicializarDatosCaribe) {
+    window.inicializarDatosCaribe(caribe);
+  }
 
   const proyeccion = d3.geoMercator().fitSize([ANCHO, ALTO], continental);
   const path = d3.geoPath(proyeccion);
+  proyeccionMapa = proyeccion;
+  pathMapa = path;
 
   const svg = d3.select(contenedor)
     .append('svg')
     .attr('viewBox', `0 0 ${ANCHO} ${ALTO}`);
 
-  svg.selectAll('path')
+  svgPrincipal = svg;
+
+  // 👉 NUEVO: todo el contenido del mapa va dentro de este <g>, que es
+  // el que se mueve/escala cuando hacemos zoom. El <svg> nunca cambia.
+  grupoMapa = svg.append('g').attr('class', 'grupo-zoom-mapa');
+
+  // 👉 NUEVO: zoom/pan sobre el mapa principal. Lo dejamos entre 1x (normal)
+  // y 8x (bien cerca), y limitamos cuánto se puede arrastrar fuera del área.
+  zoomMapa = d3.zoom()
+    .scaleExtent([1, 8])
+    .translateExtent([[0, 0], [ANCHO, ALTO]])
+    .on('zoom', (evento) => {
+      grupoMapa.attr('transform', evento.transform);
+    });
+
+  svg.call(zoomMapa);
+
+  grupoMapa.selectAll('path')
     .data(continental.features)
     .join('path')
     .attr('id', d => d.properties.id)
@@ -31,7 +68,17 @@ async function cargarMapa() {
       abrirModal(d.properties.name);
     });
 
-  // 👉 NUEVO: buscar el feature de Ecuador y ponerle una estrella encima
+    
+
+    grupoMapa.selectAll('.pais-caribe')
+    .data(caribe.features)
+    .join('path')
+    .attr('class', 'pais-caribe')
+    .attr('id', d => d.properties.id)
+    .attr('data-name', d => d.properties.name)
+    .attr('d', path);
+
+  // --- Estrella de Ecuador (sin cambios) ---
   const featureEcuador = continental.features.find(
     d => d.properties.name === PAIS_CON_PROYECTOS
   );
@@ -39,7 +86,7 @@ async function cargarMapa() {
   if (featureEcuador) {
     const [ex, ey] = path.centroid(featureEcuador);
 
-    const estrella = svg.append('text')
+    const estrella = grupoMapa.append('text')
       .attr('class', 'punto-estrella')
       .attr('x', ex)
       .attr('y', ey)
@@ -48,7 +95,7 @@ async function cargarMapa() {
       .text('★');
 
     estrella.on('click', function (evento) {
-      evento.stopPropagation(); // que no dispare el click del país también
+      evento.stopPropagation();
       cerrarPopoverCaribe();
       abrirModalProyectos(PAIS_CON_PROYECTOS);
     });
@@ -56,35 +103,208 @@ async function cargarMapa() {
     console.warn(`No se encontró el país "${PAIS_CON_PROYECTOS}" en el geojson. Revisa el nombre exacto en properties.name`);
   }
 
-  // --- Caribe (sin cambios) ---
+  // --- Caribe: solo el texto clickeable (sin cambios) ---
   const [cx, cy] = proyeccion(CARIBE_PUNTO);
 
-  const puntoCaribe = svg.append('circle')
-    .attr('class', 'punto-caribe')
-    .attr('cx', cx)
-    .attr('cy', cy)
-    .attr('r', 5);
-
-  svg.append('text')
+  grupoMapa.append('text')
+    .attr('id', 'etiqueta-caribe')
     .attr('class', 'punto-caribe-label')
     .attr('x', cx)
-    .attr('y', cy - 8)
-    .text('Caribe');
+    .attr('y', cy)
+    .text('Caribe')
+    .on('click', function (evento) {
+      evento.stopPropagation();
+      const { x, y } = posicionPopoverDesdeEtiqueta();
+      abrirPopoverCaribe(x, y);
+    });
 
-  puntoCaribe.on('click', function (evento) {
-    evento.stopPropagation();
-    const svgNode = svg.node();
-    const rectSvg = svgNode.getBoundingClientRect();
-    const rectWrapper = document.querySelector('.mapa-wrapper').getBoundingClientRect();
+  // Ya con los dos geojson cargados, armamos el listado de países
+  construirListaPaises(continental, caribe);
+}
 
-    const escalaX = rectSvg.width / ANCHO;
-    const escalaY = rectSvg.height / ALTO;
+// Calcula dónde debe aparecer el popover, tomando como referencia
+// la posición real en pantalla de la etiqueta "Caribe"
+function posicionPopoverDesdeEtiqueta() {
+  const etiqueta = document.getElementById('etiqueta-caribe');
+  const rectEtiqueta = etiqueta.getBoundingClientRect();
+  const rectWrapper = wrapperMapa.getBoundingClientRect();
 
-    const posX = (rectSvg.left - rectWrapper.left) + (cx * escalaX);
-    const posY = (rectSvg.top - rectWrapper.top) + (cy * escalaY);
+  return {
+    x: rectEtiqueta.left - rectWrapper.left,
+    y: rectEtiqueta.top - rectWrapper.top
+  };
+}
 
-    abrirPopoverCaribe(posX, posY);
+// =====================================================
+// 👉 NUEVO: zoom del mapa principal hacia la región del Caribe
+// =====================================================
+
+// Calcula, en píxeles del mapa principal, el rectángulo que envuelve
+// a todas las islas del Caribe (polígonos + puntos).
+function calcularLimitesCaribe() {
+  const puntos = [];
+
+  (datosCaribe.features || []).forEach(feature => {
+    const [[x0, y0], [x1, y1]] = pathMapa.bounds(feature);
+    puntos.push([x0, y0], [x1, y1]);
   });
+
+  const islasPunto = window.ISLAS_PUNTO || [];
+  islasPunto.forEach(isla => {
+    puntos.push(proyeccionMapa(isla.coords));
+  });
+
+  const xs = puntos.map(p => p[0]);
+  const ys = puntos.map(p => p[1]);
+
+  return {
+    x0: Math.min(...xs),
+    x1: Math.max(...xs),
+    y0: Math.min(...ys),
+    y1: Math.max(...ys)
+  };
+}
+
+// Anima el zoom del <svg> principal hacia un rectángulo (en píxeles).
+// "onFin" se ejecuta cuando termina la transición (útil para abrir
+// el popover ya con el mapa en su posición final).
+function zoomARectangulo(bounds, margen, onFin) {
+  const ancho = Math.max(bounds.x1 - bounds.x0, 1);
+  const alto = Math.max(bounds.y1 - bounds.y0, 1);
+
+  const escala = Math.min(
+    zoomMapa.scaleExtent()[1],
+    (ANCHO - margen * 2) / ancho,
+    (ALTO - margen * 2) / alto
+  );
+
+  const centroX = (bounds.x0 + bounds.x1) / 2;
+  const centroY = (bounds.y0 + bounds.y1) / 2;
+
+  const transform = d3.zoomIdentity
+    .translate(ANCHO / 2, ALTO / 2)
+    .scale(escala)
+    .translate(-centroX, -centroY);
+
+  svgPrincipal.transition()
+    .duration(700)
+    .call(zoomMapa.transform, transform)
+    .on('end', () => {
+      if (onFin) onFin();
+    });
+}
+
+// Hace zoom hacia toda la región del Caribe.
+function zoomACaribe(onFin) {
+  zoomARectangulo(calcularLimitesCaribe(), 24, onFin);
+}
+
+// Regresa el mapa a la vista normal (sin zoom).
+function resetZoomMapa() {
+  svgPrincipal.transition()
+    .duration(400)
+    .call(zoomMapa.transform, d3.zoomIdentity);
+}
+
+function normalizarTexto(txt) {
+  return txt
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+// --- Listado / búsqueda de países ---
+function construirListaPaises(continental, caribe) {
+  const listaEl = document.getElementById('lista-paises');
+  const inputBuscar = document.getElementById('buscar-pais');
+  if (!listaEl) return;
+
+  const nombresContinental = continental.features.map(d => ({
+    nombre: d.properties.name,
+    tipo: 'continental'
+  }));
+
+  const nombresCaribePoligonos = caribe.features.map(d => ({
+    nombre: d.properties.name,
+    tipo: 'caribe'
+  }));
+
+  // 👉 FIX: antes se leía "window.ISLAS_PUNTO_NOMBRES", que nunca existía
+  // en modal.js. Ahora modal.js expone "window.ISLAS_PUNTO" (con nombre
+  // y coordenadas), que además necesitamos para calcular el zoom.
+  const nombresCaribePuntos = (window.ISLAS_PUNTO || []).map(isla => ({
+    nombre: isla.name,
+    tipo: 'caribe'
+  }));
+
+  const todosLosPaises = [
+    ...nombresContinental,
+    ...nombresCaribePoligonos,
+    ...nombresCaribePuntos
+  ].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+
+  // 👉 NUEVO: mientras no se escriba nada, la lista se queda vacía.
+  function pintarLista(filtro = '') {
+    if (!filtro.trim()) {
+      listaEl.innerHTML = '';
+      return;
+    }
+
+    const filtroNorm = normalizarTexto(filtro);
+    const paisesFiltrados = todosLosPaises.filter(p =>
+      normalizarTexto(p.nombre).includes(filtroNorm)
+    );
+
+    listaEl.innerHTML = paisesFiltrados.map(p => `
+      <li class="lista-paises__item" data-nombre="${p.nombre}" data-tipo="${p.tipo}">
+        ${p.nombre}
+      </li>
+    `).join('');
+
+    listaEl.querySelectorAll('.lista-paises__item').forEach(item => {
+      item.addEventListener('click', () => {
+        seleccionarPaisDesdeLista(item.dataset.nombre, item.dataset.tipo);
+      });
+    });
+  }
+
+  pintarLista(); // ahora arranca vacía, no pinta todos los países
+
+  if (inputBuscar) {
+    inputBuscar.addEventListener('input', (e) => pintarLista(e.target.value));
+  }
+}
+
+function seleccionarPaisDesdeLista(nombre, tipo) {
+  if (tipo === 'caribe') {
+    // 👉 NUEVO: los países del Caribe SÍ hacen zoom en el mapa principal.
+    cerrarPopoverCaribe();
+    svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
+
+    zoomACaribe(() => {
+      // Recalculamos la posición del popover ya con el mapa acercado,
+      // y resaltamos ahí la isla elegida (sin abrir el modal de info).
+      const { x, y } = posicionPopoverDesdeEtiqueta();
+      abrirPopoverCaribe(x, y, nombre);
+    });
+  } else {
+    // 👉 Los demás países NUNCA hacen zoom: solo se pintan como
+    // seleccionados. Si había un zoom del Caribe activo, lo quitamos.
+    cerrarPopoverCaribe();
+    resetZoomMapa();
+    svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
+
+    const seleccionado = svgPrincipal.selectAll('path')
+      .filter(function () {
+        return this.getAttribute('data-name') === nombre;
+      });
+
+    if (!seleccionado.empty()) {
+      seleccionado.classed('seleccionado', true);
+    } else {
+      console.warn(`No se encontró "${nombre}" en el mapa continental.`);
+    }
+  }
 }
 
 cargarMapa();

@@ -38,10 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = trim($_POST['id'] ?? '');
         $nombre = $_POST['nombre'] ?? '';
         $idCategoria = $_POST['id_categoria'] ?? '';
+        $idTipoEntidad = $_POST['id_Tipo_E'] ?? ''; // NUEVO
 
         $resultado = $id !== ''
-            ? $controller->actualizarSubCategoria((int)$id, $nombre, (int)$idCategoria)
-            : $controller->crearSubCategoria($nombre, (int)$idCategoria);
+            ? $controller->actualizarSubCategoria((int)$id, $nombre, (int)$idCategoria, (int)$idTipoEntidad) // NUEVO parámetro
+            : $controller->crearSubCategoria($nombre, (int)$idCategoria, (int)$idTipoEntidad); // NUEVO parámetro
 
         header('Location: lista_categorias.php?ok=' . ($resultado['ok'] ? 1 : 0) . '&msg=' . urlencode($resultado['msg']));
         exit;
@@ -54,6 +55,7 @@ $subCategoriaEditar = isset($_GET['editar_sub']) ? $controller->obtenerSubCatego
 
 $categorias = $controller->listarCategorias();
 $subcategorias = $controller->listarSubCategorias();
+$tiposEntidad = $controller->listarTiposEntidad(); // NUEVO
 
 $msg = $_GET['msg'] ?? null;
 $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
@@ -133,7 +135,7 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
             <h1>Categorías y Subcategorías</h1>
             <span>
                 Hola, <strong><?= htmlspecialchars($_SESSION['usuario_nombres'] ?? '') ?></strong>
-                &nbsp;|&nbsp; <a href="../../logout.php">Cerrar sesión</a>
+                &nbsp;|&nbsp; <a href="../../../logout.php">Cerrar sesión</a>
             </span>
         </div>
 
@@ -207,6 +209,17 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
                         <?php endforeach; ?>
                     </select>
 
+                    <!-- NUEVO: select de Tipo de entidad -->
+                    <select name="id_Tipo_E" required>
+                        <option value="">Tipo de entidad...</option>
+                        <?php foreach ($tiposEntidad as $te): ?>
+                            <option value="<?= (int)$te['id'] ?>"
+                                <?= (isset($subCategoriaEditar['id_Tipo_E']) && $subCategoriaEditar['id_Tipo_E'] == $te['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($te['nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
                     <input type="text" name="nombre" placeholder="Nombre de la subcategoría"
                            value="<?= htmlspecialchars($subCategoriaEditar['nombre'] ?? '') ?>" required>
 
@@ -221,16 +234,17 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
 
                 <table>
                     <thead>
-                        <tr><th>Nombre</th><th>Categoría</th><th>Acciones</th></tr>
+                        <tr><th>Nombre</th><th>Categoría</th><th>Tipo</th><th>Acciones</th></tr>
                     </thead>
                     <tbody>
                         <?php if (empty($subcategorias)): ?>
-                            <tr><td colspan="3" class="vacio">No hay subcategorías registradas.</td></tr>
+                            <tr><td colspan="4" class="vacio">No hay subcategorías registradas.</td></tr>
                         <?php else: ?>
                             <?php foreach ($subcategorias as $s): ?>
                                 <tr>
                                     <td><?= htmlspecialchars($s['nombre']) ?></td>
                                     <td><?= htmlspecialchars($s['categoria_nombre']) ?></td>
+                                    <td><?= htmlspecialchars($s['tipo_entidad_nombre']) ?></td>
                                     <td class="acciones">
                                         <a class="btn btn-editar" href="lista_categorias.php?editar_sub=<?= (int)$s['id'] ?>">Editar</a>
                                         <a class="btn btn-eliminar"

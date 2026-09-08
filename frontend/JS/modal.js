@@ -50,7 +50,7 @@ const proyectosPorPais = {
 // Guardamos el país actual para poder "regresar" a su lista
 let paisActualProyectos = null;
 
-// 👉 NUEVO: abre el modal ya reutilizado, pero mostrando la LISTA de proyectos
+// 👉 abre el modal ya reutilizado, pero mostrando la LISTA de proyectos
 function abrirModalProyectos(nombrePais) {
   paisActualProyectos = nombrePais;
   mostrarListaProyectos();
@@ -106,7 +106,7 @@ function mostrarDetalleProyecto(proyecto) {
   });
 }
 
-// --- Popover del Caribe (sin cambios) ---
+// --- Popover del Caribe ---
 const popoverCaribe = document.getElementById('popover-caribe');
 const popoverCaribeCerrar = document.getElementById('popover-caribe-cerrar');
 const miniMapaContenedor = document.getElementById('mini-mapa-caribe');
@@ -121,51 +121,86 @@ const ISLAS_PUNTO = [
   { id: 'VC', name: 'San Vicente y las Granadinas', coords: [-61.2, 13.25] }
 ];
 
+// 👉 FIX: exponemos ISLAS_PUNTO para que mapa.js pueda usar sus coordenadas
+// (antes mapa.js buscaba "window.ISLAS_PUNTO_NOMBRES", que nunca existía)
+window.ISLAS_PUNTO = ISLAS_PUNTO;
+
 let miniMapaCargado = false;
 
-async function abrirPopoverCaribe(x, y) {
+// 👉 FIX: cache de los datos del Caribe para no volver a pedirlos por red.
+// mapa.js ya llama a window.inicializarDatosCaribe(caribe) cuando carga el
+// mapa principal, pero antes esa función no existía y se perdía la llamada.
+let datosCaribeCache = null;
+function inicializarDatosCaribe(geojson) {
+  datosCaribeCache = geojson;
+}
+window.inicializarDatosCaribe = inicializarDatosCaribe;
+
+// nombreParaResaltar (opcional): si viene, se marca esa isla como "seleccionado"
+// dentro del mini-mapa una vez que está construido. Lo usa mapa.js cuando
+// elegís un país del Caribe desde el buscador.
+async function abrirPopoverCaribe(x, y, nombreParaResaltar = null) {
   popoverCaribe.style.left = `${x + 12}px`;
   popoverCaribe.style.top = `${y - 30}px`;
   popoverCaribe.classList.add('activo');
 
-  if (miniMapaCargado) return;
+  if (!miniMapaCargado) {
+    // Usamos el geojson que ya cargó mapa.js si está disponible,
+    // así evitamos pedirlo dos veces por red.
+    const caribe = datosCaribeCache || await d3.json('DATA/caribe.geo.json');
 
-  const caribe = await d3.json('DATA/caribe.geo.json');
+    const proyeccion = d3.geoMercator().fitSize([ANCHO_MINI, ALTO_MINI], caribe);
+    const path = d3.geoPath(proyeccion);
 
-  const proyeccion = d3.geoMercator().fitSize([ANCHO_MINI, ALTO_MINI], caribe);
-  const path = d3.geoPath(proyeccion);
+    const svgMini = d3.select(miniMapaContenedor)
+      .append('svg')
+      .attr('viewBox', `0 0 ${ANCHO_MINI} ${ALTO_MINI}`);
 
-  const svgMini = d3.select(miniMapaContenedor)
-    .append('svg')
-    .attr('viewBox', `0 0 ${ANCHO_MINI} ${ALTO_MINI}`);
+    svgMini.selectAll('path')
+      .data(caribe.features)
+      .join('path')
+      .attr('d', path)
+      .attr('data-name', d => d.properties.name)
+      .on('click', function (evento, d) {
+        evento.stopPropagation();
+        svgMini.selectAll('.seleccionado').classed('seleccionado', false);
+        this.classList.add('seleccionado');
+        abrirModal(d.properties.name);
+      });
 
-  svgMini.selectAll('path')
-    .data(caribe.features)
-    .join('path')
-    .attr('d', path)
-    .attr('data-name', d => d.properties.name)
-    .on('click', function (evento, d) {
-      evento.stopPropagation();
-      svgMini.selectAll('.seleccionado').classed('seleccionado', false);
-      this.classList.add('seleccionado');
-      abrirModal(d.properties.name);
-    });
+    svgMini.selectAll('circle')
+      .data(ISLAS_PUNTO)
+      .join('circle')
+      .attr('cx', d => proyeccion(d.coords)[0])
+      .attr('cy', d => proyeccion(d.coords)[1])
+      .attr('r', 3)
+      .attr('data-name', d => d.name)
+      .on('click', function (evento, d) {
+        evento.stopPropagation();
+        svgMini.selectAll('.seleccionado').classed('seleccionado', false);
+        this.classList.add('seleccionado');
+        abrirModal(d.name);
+      });
 
-  svgMini.selectAll('circle')
-    .data(ISLAS_PUNTO)
-    .join('circle')
-    .attr('cx', d => proyeccion(d.coords)[0])
-    .attr('cy', d => proyeccion(d.coords)[1])
-    .attr('r', 3)
-    .attr('data-name', d => d.name)
-    .on('click', function (evento, d) {
-      evento.stopPropagation();
-      svgMini.selectAll('.seleccionado').classed('seleccionado', false);
-      this.classList.add('seleccionado');
-      abrirModal(d.name);
-    });
+    miniMapaCargado = true;
+  }
 
-  miniMapaCargado = true;
+  if (nombreParaResaltar) {
+    resaltarIslaCaribe(nombreParaResaltar);
+  }
+}
+
+// 👉 NUEVO: resalta (sin abrir el modal de info) la isla elegida desde el buscador
+function resaltarIslaCaribe(nombre) {
+  const svgMini = d3.select(miniMapaContenedor).select('svg');
+  if (svgMini.empty()) return;
+
+  svgMini.selectAll('.seleccionado').classed('seleccionado', false);
+  svgMini.selectAll('path, circle')
+    .filter(function () {
+      return this.getAttribute('data-name') === nombre;
+    })
+    .classed('seleccionado', true);
 }
 
 function cerrarPopoverCaribe() {

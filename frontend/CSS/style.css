@@ -130,6 +130,47 @@ body {
   font-style: italic;
 }
 
+
+.panel-paises {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 220px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 10px;
+  z-index: 5;
+}
+
+.panel-paises__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.lista-paises {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lista-paises__item {
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.lista-paises__item:hover {
+  background: #f0f0f0;
+}
+
 /* ============================================================
    RESPONSIVE — Tablets (incluye iPad Pro 13"/12.9": 1024–1366px)
    ============================================================ */

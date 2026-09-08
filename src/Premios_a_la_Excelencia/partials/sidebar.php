@@ -13,14 +13,18 @@ $paginaActiva = $paginaActiva ?? '';
     <div class="sidebar-logo">Premios a la Excelencia</div>
 
     <nav class="sidebar-nav">
-        <a href="#" class="<?= $paginaActiva === 'usuarios' ? 'activo' : '' ?>">
+        <a href="<?= $paginaActiva === 'usuarios' ? '#' : '../usuarios/Listar_usuarios.php' ?>"
+           class="<?= $paginaActiva === 'usuarios' ? 'activo' : '' ?>">
             Usuarios
         </a>
-        <a href="../categoria/lista_categorias.php" class="<?= $paginaActiva === 'proyectos' ? 'activo' : '' ?>">
-            Proyectos
-        </a>
-        <a href="#" class="<?= $paginaActiva === 'categorias' ? 'activo' : '' ?>">
+        <a href="<?= $paginaActiva === 'categorias' ? '#' : '../categoria/lista_categorias.php' ?>"
+           class="<?= $paginaActiva === 'categorias' ? 'activo' : '' ?>">
             Categorías
+        </a>
+
+        <a href="<?= $paginaActiva === 'proyectos' ? '#' : '../proyectos/Listar_proyectos.php' ?>"
+           class="<?= $paginaActiva === 'proyectos' ? 'activo' : '' ?>">
+            Proyectos
         </a>
     </nav>
 </aside>
