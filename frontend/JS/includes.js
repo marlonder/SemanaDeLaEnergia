@@ -17,6 +17,10 @@ const btnRefrescar = document.getElementById('btn-refrescar');
 const iconoRefrescar = btnRefrescar.querySelector('.btn-refrescar__icono');
 
 btnRefrescar.addEventListener('click', () => {
+  
+  limpiarBusqueda();
+
+  
   d3.select(contenedor).selectAll('path').classed('seleccionado', false);
   cerrarModal();
   modalTitulo.textContent = 'Proyectos de la Excelencia';

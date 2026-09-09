@@ -71,25 +71,25 @@ async function cargarMapa() {
     
 
     grupoMapa.selectAll('.pais-caribe')
-    .data(caribe.features)
-    .join('path')
-    .attr('class', 'pais-caribe')
-    .attr('id', d => d.properties.id)
-    .attr('data-name', d => d.properties.name)
-    .attr('d', path);grupoMapa.selectAll('.pais-caribe')
-  .data(caribe.features)
-  .join('path')
-  .attr('class', 'pais-caribe')
-  .attr('id', d => d.properties.id)
-  .attr('data-name', d => d.properties.name)
-  .attr('d', path)
-  .on('click', function (evento, d) {
-    evento.stopPropagation();
-    svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
-    this.classList.add('seleccionado');
-    cerrarPopoverCaribe();
-    abrirModal(d.properties.name);
-  });
+      .data(caribe.features)
+      .join('path')
+      .attr('class', 'pais-caribe')
+      .attr('id', d => d.properties.id)
+      .attr('data-name', d => d.properties.name)
+      .attr('d', path);grupoMapa.selectAll('.pais-caribe')
+      .data(caribe.features)
+      .join('path')
+      .attr('class', 'pais-caribe')
+      .attr('id', d => d.properties.id)
+      .attr('data-name', d => d.properties.name)
+      .attr('d', path)
+      .on('click', function (evento, d) {
+      evento.stopPropagation();
+      svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
+      this.classList.add('seleccionado');
+      cerrarPopoverCaribe();
+      abrirModal(d.properties.name);
+    });
 
 
 
@@ -222,9 +222,6 @@ function construirListaPaises(continental, caribe) {
     tipo: 'caribe'
   }));
 
-  // 👉 FIX: antes se leía "window.ISLAS_PUNTO_NOMBRES", que nunca existía
-  // en modal.js. Ahora modal.js expone "window.ISLAS_PUNTO" (con nombre
-  // y coordenadas), que además necesitamos para calcular el zoom.
   const nombresCaribePuntos = (window.ISLAS_PUNTO || []).map(isla => ({
     nombre: isla.name,
     tipo: 'caribe'
@@ -236,19 +233,11 @@ function construirListaPaises(continental, caribe) {
     ...nombresCaribePuntos
   ].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
-  // 👉 NUEVO: mientras no se escriba nada, la lista se queda vacía.
-  function pintarLista(filtro = '') {
-    if (!filtro.trim()) {
-      listaEl.innerHTML = '';
-      return;
-    }
+  // 👉 índice del item resaltado con las flechas
+  let indiceActivo = -1;
 
-    const filtroNorm = normalizarTexto(filtro);
-    const paisesFiltrados = todosLosPaises.filter(p =>
-      normalizarTexto(p.nombre).includes(filtroNorm)
-    );
-
-    listaEl.innerHTML = paisesFiltrados.map(p => `
+  function renderItems(paises) {
+    listaEl.innerHTML = paises.map(p => `
       <li class="lista-paises__item" data-nombre="${p.nombre}" data-tipo="${p.tipo}">
         ${p.nombre}
       </li>
@@ -259,14 +248,72 @@ function construirListaPaises(continental, caribe) {
         seleccionarPaisDesdeLista(item.dataset.nombre, item.dataset.tipo);
       });
     });
+
+    indiceActivo = -1;
   }
 
-  pintarLista(); // ahora arranca vacía, no pinta todos los países
+  function pintarLista(filtro = '') {
+    if (!filtro.trim()) {
+      listaEl.innerHTML = '';
+      return;
+    }
+    const filtroNorm = normalizarTexto(filtro);
+    const paisesFiltrados = todosLosPaises.filter(p =>
+      normalizarTexto(p.nombre).includes(filtroNorm)
+    );
+    renderItems(paisesFiltrados);
+  }
 
-   if (inputBuscar) {
+  // 👉 NUEVO: al hacer foco con el campo vacío, muestra todos los países
+  function mostrarTodos() {
+    renderItems(todosLosPaises);
+  }
+
+  function actualizarActivo(items) {
+    items.forEach((item, i) => item.classList.toggle('activo', i === indiceActivo));
+    if (items[indiceActivo]) {
+      items[indiceActivo].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  pintarLista(); // arranca vacía
+
+  if (inputBuscar) {
     inputBuscar.addEventListener('input', (e) => {
       pintarLista(e.target.value);
       if (wrapper) wrapper.classList.toggle('tiene-texto', e.target.value.trim().length > 0);
+    });
+
+    // 👉 NUEVO: mostrar todos al hacer foco si está vacío
+    inputBuscar.addEventListener('focus', () => {
+      if (!inputBuscar.value.trim()) {
+        mostrarTodos();
+      }
+    });
+
+    // 👉 NUEVO: navegación con teclado, reusando seleccionarPaisDesdeLista
+    inputBuscar.addEventListener('keydown', (e) => {
+      const items = listaEl.querySelectorAll('.lista-paises__item');
+      if (!items.length) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        indiceActivo = (indiceActivo + 1) % items.length;
+        actualizarActivo(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        indiceActivo = (indiceActivo - 1 + items.length) % items.length;
+        actualizarActivo(items);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (indiceActivo >= 0 && items[indiceActivo]) {
+          const item = items[indiceActivo];
+          seleccionarPaisDesdeLista(item.dataset.nombre, item.dataset.tipo);
+        }
+      } else if (e.key === 'Escape') {
+        listaEl.innerHTML = '';
+        indiceActivo = -1;
+      }
     });
   }
 

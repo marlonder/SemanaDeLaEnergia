@@ -1,2 +1,5 @@
 #credenciales
 .env
+
+#DB
+/var/www/html/premios/SemanaDeLaEnergia/src/Premios_a_la_Excelencia/config/db.php

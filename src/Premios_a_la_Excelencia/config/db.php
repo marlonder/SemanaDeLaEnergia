@@ -4,7 +4,7 @@
  */
 class Conexion
 {
-    private $host = "localhost";
+    private $host = "complexivo_db";
     private $port = "3306";
     private $db_name = "SemanaDelaEnergia";
     private $username = "root";

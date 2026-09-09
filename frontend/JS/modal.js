@@ -23,7 +23,7 @@ modalOverlay.addEventListener('click', (e) => {
 // =====================================================
 
 
-const API_BASE_URL = 'http://localhost:8080'; 
+const API_BASE_URL = 'http://192.168.1.205:8080/Premios_a_la_Excelencia'; 
 // 👉 abre el modal ya reutilizado, pero mostrando la LISTA de proyectos
 async function abrirModal(nombrePais) {
   paisActualProyectos = nombrePais;
@@ -55,33 +55,39 @@ async function abrirModal(nombrePais) {
   }
 }
 
-function mostrarListaProyectos() {
-  const proyectos = proyectosPorPais[paisActualProyectos] || [];
+let proyectosActuales = []; 
+
+function mostrarListaProyectos(proyectos) {
+  proyectosActuales = proyectos;
 
   modalTitulo.textContent = `Proyectos en ${paisActualProyectos}`;
   modalContenido.classList.remove('vacio');
 
-  if (proyectos.length === 0) {
+  if (!proyectos || proyectos.length === 0) {
     modalContenido.textContent = 'Aún no hay proyectos cargados para este país.';
     return;
   }
 
   modalContenido.innerHTML = `
-    <ul class="lista-proyectos">
-      ${proyectos.map((p, i) => `
-        <li class="lista-proyectos__item" data-index="${i}">
-          <span class="lista-proyectos__nombre">${p.nombre}</span>
-          <span class="lista-proyectos__categoria">${p.categoria}</span>
-        </li>
-      `).join('')}
-    </ul>
+    <div class="modal-proyectos__layout">
+      <div class="modal-proyectos__logo">
+        <img src="http://192.168.1.205:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png" alt="Logo Premio Excelencia Energética">
+      </div>
+      <ul class="lista-proyectos">
+        ${proyectos.map((p, i) => `
+          <li class="lista-proyectos__item" data-index="${i}">
+            <span class="lista-proyectos__nombre">${p.nombre}</span>
+            <span class="lista-proyectos__categoria">${p.categoria}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
   `;
 
-  // Click en cada proyecto -> abre el detalle
   modalContenido.querySelectorAll('.lista-proyectos__item').forEach(item => {
     item.addEventListener('click', () => {
       const idx = Number(item.dataset.index);
-      mostrarDetalleProyecto(proyectos[idx]);
+      mostrarDetalleProyecto(proyectosActuales[idx]);
     });
   });
 }
@@ -89,18 +95,44 @@ function mostrarListaProyectos() {
 function mostrarDetalleProyecto(proyecto) {
   modalTitulo.textContent = proyecto.nombre;
 
+  // 👉 Si no hay foto, usa una imagen por defecto (ajusta la ruta a la real en tu servidor)
+  const RUTA_IMAGEN_DEFECTO = 'http://192.168.1.205:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png';
+  const fotoProyecto = proyecto.foto && proyecto.foto.trim() ? proyecto.foto : RUTA_IMAGEN_DEFECTO;
+
+  // 👉 Subcategoría es opcional: solo se pinta si existe
+  const subcategoriaHtml = proyecto.subcategoria && proyecto.subcategoria.trim()
+    ? `<span class="detalle-proyecto__subcategoria">${proyecto.subcategoria}</span>`
+    : '';
+
+  // 👉 QR es opcional: solo se pinta si existe
+  const qrHtml = proyecto.qr && proyecto.qr.trim()
+    ? `
+      <div class="detalle-proyecto__qr-wrap">
+        <img class="detalle-proyecto__qr" src="${proyecto.qr}" alt="Código QR del proyecto">
+      </div>
+    `
+    : '';
+
   modalContenido.innerHTML = `
     <div class="detalle-proyecto">
-      <img class="detalle-proyecto__foto" src="${proyecto.foto}" alt="${proyecto.nombre}">
+      <div class="detalle-proyecto__imagen-wrap">
+        <img class="detalle-proyecto__foto" src="${fotoProyecto}" alt="${proyecto.nombre}"
+            onerror="this.src='${RUTA_IMAGEN_DEFECTO}'">
+      </div>
+      <div class="detalle-proyecto__info">
       <p class="detalle-proyecto__descripcion">${proyecto.descripcion}</p>
-      <p class="detalle-proyecto__categoria"><strong>Categoría:</strong> ${proyecto.categoria}</p>
-      <img class="detalle-proyecto__qr" src="${proyecto.qr}" alt="Código QR del proyecto">
-      <button class="btn-regresar" id="btn-regresar-proyecto">← Regresar</button>
+        <div class="detalle-proyecto__badges">
+          <span class="detalle-proyecto__categoria">${proyecto.categoria}</span>
+          ${subcategoriaHtml}
+        </div>
+        ${qrHtml}
+        <button class="btn-regresar" id="btn-regresar-proyecto">← Regresar</button>
+      </div>
     </div>
   `;
 
   document.getElementById('btn-regresar-proyecto').addEventListener('click', () => {
-    mostrarListaProyectos();
+    mostrarListaProyectos(proyectosActuales);
   });
 }
 

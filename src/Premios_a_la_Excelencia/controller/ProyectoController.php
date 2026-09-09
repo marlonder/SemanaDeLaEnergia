@@ -165,50 +165,60 @@ class ProyectoController
     //Menejo de Imagen 
     private function subirImagen($archivo, $imagenActual = null)
     {
+        error_log('=== subirImagen() llamada ===');
+        error_log('archivo recibido: ' . print_r($archivo, true));
+
         if (empty($archivo) || $archivo['error'] === UPLOAD_ERR_NO_FILE) {
-            return ['ok' => true, 'path' => $imagenActual]; // no se subió nada nuevo
+            error_log('-> No llegó archivo nuevo, se mantiene: ' . $imagenActual);
+            return ['ok' => true, 'path' => $imagenActual];
         }
 
         if ($archivo['error'] !== UPLOAD_ERR_OK) {
-            return ['ok' => false, 'msg' => 'Ocurrió un error al subir la imagen.'];
+            error_log('-> ERROR en $_FILES, código: ' . $archivo['error']);
+            return ['ok' => false, 'msg' => 'Ocurrió un error al subir la imagen (código ' . $archivo['error'] . ').'];
         }
 
         $permitidos = [
-            'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
-            'image/webp' => 'webp',
-            'image/gif'  => 'gif',
+            'image/jpeg' => 'jpg', 'image/png' => 'png',
+            'image/webp' => 'webp', 'image/gif' => 'gif',
         ];
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime  = finfo_file($finfo, $archivo['tmp_name']);
         finfo_close($finfo);
+        error_log('-> MIME detectado: ' . var_export($mime, true));
 
         if (!isset($permitidos[$mime])) {
+            error_log('-> MIME no permitido');
             return ['ok' => false, 'msg' => 'Formato no permitido. Solo JPG, PNG, WEBP o GIF.'];
         }
 
-        $directorioDestino = '/var/www/html/premios/SemanaDeLaEnergia/src/Premios_a_la_Excelencia/media';
+        $directorioDestino = __DIR__ . '/../media';
+        error_log('-> Destino: ' . $directorioDestino . ' | existe: ' . (is_dir($directorioDestino) ? 'sí' : 'no') . ' | escribible: ' . (is_writable($directorioDestino) ? 'sí' : 'no'));
+
         if (!is_dir($directorioDestino)) {
-            mkdir($directorioDestino, 0755, true);
+            if (!mkdir($directorioDestino, 0755, true) && !is_dir($directorioDestino)) {
+                error_log('-> FALLÓ mkdir');
+                return ['ok' => false, 'msg' => 'No se pudo crear el directorio de destino.'];
+            }
         }
 
         $nombreArchivo = uniqid('proy_', true) . '.' . $permitidos[$mime];
         $rutaDestino   = $directorioDestino . '/' . $nombreArchivo;
 
         if (!move_uploaded_file($archivo['tmp_name'], $rutaDestino)) {
+            error_log('-> FALLÓ move_uploaded_file. tmp_name: ' . $archivo['tmp_name'] . ' | es_upload_valido: ' . (is_uploaded_file($archivo['tmp_name']) ? 'sí' : 'no'));
             return ['ok' => false, 'msg' => 'No se pudo guardar la imagen en el servidor.'];
         }
 
-        // borra la imagen anterior si es una edición con reemplazo
+        error_log('-> ÉXITO: ' . $nombreArchivo);
+
         if (!empty($imagenActual)) {
             $rutaAnterior = $directorioDestino . '/' . basename($imagenActual);
-            if (is_file($rutaAnterior)) {
-                @unlink($rutaAnterior);
-            }
+            if (is_file($rutaAnterior)) @unlink($rutaAnterior);
         }
 
-        return ['ok' => true, 'path' => $nombreArchivo]; // en BD guarda solo el nombre
+        return ['ok' => true, 'path' => $nombreArchivo];
     }
 
 
