@@ -5,7 +5,7 @@ const ANCHO = 550;
 const ALTO = 750;
 
 const CARIBE_PUNTO = [-75, 19];
-const PAIS_CON_PROYECTOS = 'Ecuador';
+
 
 let svgPrincipal = null;
 let grupoMapa = null;      // 👉 NUEVO: <g> que se transforma con el zoom
@@ -76,32 +76,23 @@ async function cargarMapa() {
     .attr('class', 'pais-caribe')
     .attr('id', d => d.properties.id)
     .attr('data-name', d => d.properties.name)
-    .attr('d', path);
+    .attr('d', path);grupoMapa.selectAll('.pais-caribe')
+  .data(caribe.features)
+  .join('path')
+  .attr('class', 'pais-caribe')
+  .attr('id', d => d.properties.id)
+  .attr('data-name', d => d.properties.name)
+  .attr('d', path)
+  .on('click', function (evento, d) {
+    evento.stopPropagation();
+    svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
+    this.classList.add('seleccionado');
+    cerrarPopoverCaribe();
+    abrirModal(d.properties.name);
+  });
 
-  // --- Estrella de Ecuador (sin cambios) ---
-  const featureEcuador = continental.features.find(
-    d => d.properties.name === PAIS_CON_PROYECTOS
-  );
 
-  if (featureEcuador) {
-    const [ex, ey] = path.centroid(featureEcuador);
 
-    const estrella = grupoMapa.append('text')
-      .attr('class', 'punto-estrella')
-      .attr('x', ex)
-      .attr('y', ey)
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .text('★');
-
-    estrella.on('click', function (evento) {
-      evento.stopPropagation();
-      cerrarPopoverCaribe();
-      abrirModalProyectos(PAIS_CON_PROYECTOS);
-    });
-  } else {
-    console.warn(`No se encontró el país "${PAIS_CON_PROYECTOS}" en el geojson. Revisa el nombre exacto en properties.name`);
-  }
 
   // --- Caribe: solo el texto clickeable (sin cambios) ---
   const [cx, cy] = proyeccion(CARIBE_PUNTO);
@@ -111,7 +102,7 @@ async function cargarMapa() {
     .attr('class', 'punto-caribe-label')
     .attr('x', cx)
     .attr('y', cy)
-    .text('Caribe')
+    //.text('Caribe')
     .on('click', function (evento) {
       evento.stopPropagation();
       const { x, y } = posicionPopoverDesdeEtiqueta();
@@ -217,6 +208,8 @@ function normalizarTexto(txt) {
 function construirListaPaises(continental, caribe) {
   const listaEl = document.getElementById('lista-paises');
   const inputBuscar = document.getElementById('buscar-pais');
+  const btnLimpiar = document.getElementById('btn-limpiar-busqueda');
+  const wrapper = document.querySelector('.panel-paises__buscar-wrapper');
   if (!listaEl) return;
 
   const nombresContinental = continental.features.map(d => ({
@@ -270,26 +263,45 @@ function construirListaPaises(continental, caribe) {
 
   pintarLista(); // ahora arranca vacía, no pinta todos los países
 
-  if (inputBuscar) {
-    inputBuscar.addEventListener('input', (e) => pintarLista(e.target.value));
+   if (inputBuscar) {
+    inputBuscar.addEventListener('input', (e) => {
+      pintarLista(e.target.value);
+      if (wrapper) wrapper.classList.toggle('tiene-texto', e.target.value.trim().length > 0);
+    });
+  }
+
+  if (btnLimpiar) {
+    btnLimpiar.addEventListener('click', limpiarBusqueda);
   }
 }
 
 function seleccionarPaisDesdeLista(nombre, tipo) {
+  const inputBuscar = document.getElementById('buscar-pais');
+  const listaEl = document.getElementById('lista-paises');
+  const wrapper = document.querySelector('.panel-paises__buscar-wrapper');
+
+  if (inputBuscar) inputBuscar.value = nombre;
+  if (listaEl) listaEl.innerHTML = '';               // 👈 oculta el listado
+  if (wrapper) wrapper.classList.add('tiene-texto');  // 👈 mantiene visible la "X"
+
   if (tipo === 'caribe') {
-    // 👉 NUEVO: los países del Caribe SÍ hacen zoom en el mapa principal.
     cerrarPopoverCaribe();
     svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
 
+    const seleccionado = svgPrincipal.selectAll('path.pais-caribe')
+      .filter(function () {
+        return this.getAttribute('data-name') === nombre;
+      });
+
+    if (!seleccionado.empty()) {
+      seleccionado.classed('seleccionado', true);
+    }
+
     zoomACaribe(() => {
-      // Recalculamos la posición del popover ya con el mapa acercado,
-      // y resaltamos ahí la isla elegida (sin abrir el modal de info).
       const { x, y } = posicionPopoverDesdeEtiqueta();
       abrirPopoverCaribe(x, y, nombre);
     });
   } else {
-    // 👉 Los demás países NUNCA hacen zoom: solo se pintan como
-    // seleccionados. Si había un zoom del Caribe activo, lo quitamos.
     cerrarPopoverCaribe();
     resetZoomMapa();
     svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
@@ -305,6 +317,21 @@ function seleccionarPaisDesdeLista(nombre, tipo) {
       console.warn(`No se encontró "${nombre}" en el mapa continental.`);
     }
   }
+}
+
+// 👉 FIX 3: limpia el buscador y cancela selección/zoom/popover
+function limpiarBusqueda() {
+  const inputBuscar = document.getElementById('buscar-pais');
+  const listaEl = document.getElementById('lista-paises');
+  const wrapper = document.querySelector('.panel-paises__buscar-wrapper');
+
+  if (inputBuscar) inputBuscar.value = '';
+  if (listaEl) listaEl.innerHTML = '';
+  if (wrapper) wrapper.classList.remove('tiene-texto');
+
+  cerrarPopoverCaribe();
+  resetZoomMapa();
+  svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
 }
 
 cargarMapa();

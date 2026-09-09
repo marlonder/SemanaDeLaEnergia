@@ -20,7 +20,10 @@
 
         <!-- 👉 NUEVO: panel con el listado/búsqueda de países -->
         <div id="panel-paises" class="panel-paises">
-          <input type="text" id="buscar-pais" class="panel-paises__input" placeholder="Buscar país...">
+          <div class="panel-paises__buscar-wrapper">
+            <input type="text" id="buscar-pais" class="panel-paises__input" placeholder="Buscar país...">
+            <button id="btn-limpiar-busqueda" class="btn-limpiar-busqueda" type="button" title="Limpiar">&times;</button>
+          </div>
           <ul id="lista-paises" class="lista-paises"></ul>
         </div>
 

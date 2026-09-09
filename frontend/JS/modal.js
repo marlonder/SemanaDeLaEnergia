@@ -21,40 +21,38 @@ modalOverlay.addEventListener('click', (e) => {
 // =====================================================
 // 👉 NUEVO: datos inventados (luego vienen de una BD)
 // =====================================================
-const proyectosPorPais = {
-  Ecuador: [
-    {
-      nombre: 'Agua Limpia Andina',
-      descripcion: 'Proyecto de saneamiento y acceso a agua potable en comunidades rurales de la sierra ecuatoriana.',
-      categoria: 'Ambiental',
-      foto: 'https://picsum.photos/seed/agua/400/250',
-      qr: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=AguaLimpiaAndina'
-    },
-    {
-      nombre: 'Educación para Todos',
-      descripcion: 'Iniciativa de becas y material escolar para niños en zonas de difícil acceso.',
-      categoria: 'Educación',
-      foto: 'https://picsum.photos/seed/educacion/400/250',
-      qr: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EducacionParaTodos'
-    },
-    {
-      nombre: 'Reforestando Ecuador',
-      descripcion: 'Programa de reforestación en zonas afectadas por la deforestación en la Amazonía.',
-      categoria: 'Medio Ambiente',
-      foto: 'https://picsum.photos/seed/bosque/400/250',
-      qr: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ReforestandoEcuador'
-    }
-  ]
-};
 
-// Guardamos el país actual para poder "regresar" a su lista
-let paisActualProyectos = null;
 
+const API_BASE_URL = 'http://localhost:8080'; 
 // 👉 abre el modal ya reutilizado, pero mostrando la LISTA de proyectos
-function abrirModalProyectos(nombrePais) {
+async function abrirModal(nombrePais) {
   paisActualProyectos = nombrePais;
-  mostrarListaProyectos();
+  modalTitulo.textContent = `Proyectos de ${nombrePais}`;
+  modalContenido.classList.remove('vacio');
+  modalContenido.textContent = 'Cargando...';
   modalOverlay.classList.add('activo');
+
+  try {
+    const respuesta = await fetch(`${API_BASE_URL}/proyectos_mapa.php?pais=${encodeURIComponent(nombrePais)}`);
+    const proyectos = await respuesta.json();
+    mostrarListaProyectos(proyectos);
+  } catch (err) {
+    modalContenido.textContent = 'Error al cargar los proyectos.';
+  }
+}async function abrirModal(nombrePais) {
+  paisActualProyectos = nombrePais;
+  modalTitulo.textContent = `Proyectos de ${nombrePais}`;
+  modalContenido.classList.remove('vacio');
+  modalContenido.textContent = 'Cargando...';
+  modalOverlay.classList.add('activo');
+
+  try {
+    const respuesta = await fetch(`${API_BASE_URL}/proyectos_mapa.php?pais=${encodeURIComponent(nombrePais)}`);
+    const proyectos = await respuesta.json();
+    mostrarListaProyectos(proyectos);
+  } catch (err) {
+    modalContenido.textContent = 'Error al cargar los proyectos.';
+  }
 }
 
 function mostrarListaProyectos() {

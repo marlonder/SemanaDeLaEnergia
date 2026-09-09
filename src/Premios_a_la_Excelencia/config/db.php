@@ -4,8 +4,8 @@
  */
 class Conexion
 {
-    private $host = "192.168.1.205";
-    private $port = "3307";
+    private $host = "localhost";
+    private $port = "3306";
     private $db_name = "SemanaDelaEnergia";
     private $username = "root";
     private $password = "Olacde.2026";

@@ -57,6 +57,26 @@ body {
   fill: var(--sde-navy-dark);
 }
 
+
+.panel-paises__buscar-wrapper {
+  position: relative;
+}
+.btn-limpiar-busqueda {
+  position: absolute;
+  right: 8px;
+  top: 40%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: none; /* solo aparece cuando hay texto */
+}
+.panel-paises__buscar-wrapper.tiene-texto .btn-limpiar-busqueda {
+  display: block;
+}
+
 /* ============================================================
    MODAL — reemplaza al panel-info fijo
    ============================================================ */
@@ -133,7 +153,7 @@ body {
 
 .panel-paises {
   position: absolute;
-  top: 12px;
+  top: -5px;
   right: 12px;
   width: 220px;
   max-height: 70vh;

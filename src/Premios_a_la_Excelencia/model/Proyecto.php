@@ -149,4 +149,28 @@ class Proyecto
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+
+    public function listarActivosPorPais($nombrePais)
+    {
+        $sql = "SELECT p.titulo,
+                    p.descripcion,
+                    p.organizacion,
+                    p.link,
+                    p.red_social,
+                    p.imagen_path,
+                    p.anio,
+                    c.nombre AS categoria_nombre
+                FROM {$this->tabla} p
+                INNER JOIN pais pa ON pa.id = p.id_pais
+                LEFT JOIN categoria c ON c.id = p.id_categoria
+                WHERE pa.nombre = :nombrePais
+                AND p.estado = 1
+                ORDER BY p.fecha_registro DESC";
+    
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':nombrePais', $nombrePais, PDO::PARAM_STR);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

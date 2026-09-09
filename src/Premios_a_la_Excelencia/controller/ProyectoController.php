@@ -210,4 +210,10 @@ class ProyectoController
 
         return ['ok' => true, 'path' => $nombreArchivo]; // en BD guarda solo el nombre
     }
+
+
+    public function listarActivosPorPais($nombrePais)
+    {
+        return $this->proyecto->listarActivosPorPais($nombrePais);
+    }
 }
