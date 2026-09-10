@@ -83,20 +83,23 @@ class ProyectoController
         return null;
     }
 
-    public function crear($datos, $idUsuario, $archivoImagen = null)
+    public function crear($datos, $idUsuario, $archivoImagen = null, $archivoQr = null)
     {
         $error = $this->validar($datos);
         if ($error) {
             return ['ok' => false, 'msg' => $error];
         }
 
-        $resImg = $this->subirImagen($archivoImagen);
+        $resImg = $this->subirArchivo($archivoImagen, 'media/proyecto', 'proy_');
         if (!$resImg['ok']) return ['ok' => false, 'msg' => $resImg['msg']];
+
+        $resQr = $this->subirArchivo($archivoQr, 'media/qr', 'qr_');
+        if (!$resQr['ok']) return ['ok' => false, 'msg' => $resQr['msg']];
 
         $this->proyecto->titulo = trim($datos['titulo']);
         $this->proyecto->descripcion = trim($datos['descripcion'] ?? '');
         $this->proyecto->organizacion = trim($datos['organizacion'] ?? '');
-        $this->proyecto->link = trim($datos['link'] ?? '');
+        $this->proyecto->link = $resQr['path']; // ahora guarda el nombre del archivo QR
         $this->proyecto->red_social = trim($datos['red_social'] ?? '');
         $this->proyecto->imagen_path = $resImg['path'];
         $this->proyecto->anio = !empty($datos['anio']) ? (int)$datos['anio'] : null;
@@ -113,7 +116,7 @@ class ProyectoController
         return ['ok' => false, 'msg' => 'Ocurrió un error al crear el proyecto.'];
     }
 
-    public function actualizar($id, $datos, $archivoImagen = null)
+   public function actualizar($id, $datos, $archivoImagen = null, $archivoQr = null)
     {
         $actual = $this->proyecto->obtenerPorId($id);
         if (!$actual) {
@@ -125,16 +128,21 @@ class ProyectoController
             return ['ok' => false, 'msg' => $error];
         }
 
-        $resImg = $this->subirImagen($archivoImagen, $actual['imagen_path']);
+        $resImg = $this->subirArchivo($archivoImagen, 'media/proyecto', 'proy_', $actual['imagen_path']);
         if (!$resImg['ok']) {
             return ['ok' => false, 'msg' => $resImg['msg']];
+        }
+
+        $resQr = $this->subirArchivo($archivoQr, 'media/qr', 'qr_', $actual['link']);
+        if (!$resQr['ok']) {
+            return ['ok' => false, 'msg' => $resQr['msg']];
         }
 
         $this->proyecto->id = $id;
         $this->proyecto->titulo = trim($datos['titulo']);
         $this->proyecto->descripcion = trim($datos['descripcion'] ?? '');
         $this->proyecto->organizacion = trim($datos['organizacion'] ?? '');
-        $this->proyecto->link = trim($datos['link'] ?? '');
+        $this->proyecto->link = $resQr['path'];
         $this->proyecto->red_social = trim($datos['red_social'] ?? '');
         $this->proyecto->imagen_path = $resImg['path'];
         $this->proyecto->anio = !empty($datos['anio']) ? (int)$datos['anio'] : null;
@@ -162,20 +170,15 @@ class ProyectoController
     }
 
 
-    //Menejo de Imagen 
-    private function subirImagen($archivo, $imagenActual = null)
+// Método genérico de subida 
+    private function subirArchivo($archivo, $subcarpeta, $prefijo, $actual = null)
     {
-        error_log('=== subirImagen() llamada ===');
-        error_log('archivo recibido: ' . print_r($archivo, true));
-
         if (empty($archivo) || $archivo['error'] === UPLOAD_ERR_NO_FILE) {
-            error_log('-> No llegó archivo nuevo, se mantiene: ' . $imagenActual);
-            return ['ok' => true, 'path' => $imagenActual];
+            return ['ok' => true, 'path' => $actual];
         }
 
         if ($archivo['error'] !== UPLOAD_ERR_OK) {
-            error_log('-> ERROR en $_FILES, código: ' . $archivo['error']);
-            return ['ok' => false, 'msg' => 'Ocurrió un error al subir la imagen (código ' . $archivo['error'] . ').'];
+            return ['ok' => false, 'msg' => 'Ocurrió un error al subir el archivo (código ' . $archivo['error'] . ').'];
         }
 
         $permitidos = [
@@ -186,35 +189,28 @@ class ProyectoController
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime  = finfo_file($finfo, $archivo['tmp_name']);
         finfo_close($finfo);
-        error_log('-> MIME detectado: ' . var_export($mime, true));
 
         if (!isset($permitidos[$mime])) {
-            error_log('-> MIME no permitido');
             return ['ok' => false, 'msg' => 'Formato no permitido. Solo JPG, PNG, WEBP o GIF.'];
         }
 
-        $directorioDestino = __DIR__ . '/../media';
-        error_log('-> Destino: ' . $directorioDestino . ' | existe: ' . (is_dir($directorioDestino) ? 'sí' : 'no') . ' | escribible: ' . (is_writable($directorioDestino) ? 'sí' : 'no'));
+        $directorioDestino = __DIR__ . '/../' . $subcarpeta;
 
         if (!is_dir($directorioDestino)) {
             if (!mkdir($directorioDestino, 0755, true) && !is_dir($directorioDestino)) {
-                error_log('-> FALLÓ mkdir');
                 return ['ok' => false, 'msg' => 'No se pudo crear el directorio de destino.'];
             }
         }
 
-        $nombreArchivo = uniqid('proy_', true) . '.' . $permitidos[$mime];
+        $nombreArchivo = uniqid($prefijo, true) . '.' . $permitidos[$mime];
         $rutaDestino   = $directorioDestino . '/' . $nombreArchivo;
 
         if (!move_uploaded_file($archivo['tmp_name'], $rutaDestino)) {
-            error_log('-> FALLÓ move_uploaded_file. tmp_name: ' . $archivo['tmp_name'] . ' | es_upload_valido: ' . (is_uploaded_file($archivo['tmp_name']) ? 'sí' : 'no'));
-            return ['ok' => false, 'msg' => 'No se pudo guardar la imagen en el servidor.'];
+            return ['ok' => false, 'msg' => 'No se pudo guardar el archivo en el servidor.'];
         }
 
-        error_log('-> ÉXITO: ' . $nombreArchivo);
-
-        if (!empty($imagenActual)) {
-            $rutaAnterior = $directorioDestino . '/' . basename($imagenActual);
+        if (!empty($actual)) {
+            $rutaAnterior = $directorioDestino . '/' . basename($actual);
             if (is_file($rutaAnterior)) @unlink($rutaAnterior);
         }
 

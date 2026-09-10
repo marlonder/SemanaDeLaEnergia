@@ -23,7 +23,7 @@ modalOverlay.addEventListener('click', (e) => {
 // =====================================================
 
 
-const API_BASE_URL = 'http://192.168.18.22:8080/Premios_a_la_Excelencia'; 
+const API_BASE_URL = 'http://192.168.1.205:8080/Premios_a_la_Excelencia'; 
 // 👉 abre el modal ya reutilizado, pero mostrando la LISTA de proyectos
 async function abrirModal(nombrePais) {
   paisActualProyectos = nombrePais;
@@ -71,7 +71,7 @@ function mostrarListaProyectos(proyectos) {
   modalContenido.innerHTML = `
     <div class="modal-proyectos__layout">
       <div class="modal-proyectos__logo">
-        <img src="http://192.168.18.22:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png" alt="Logo Premio Excelencia Energética">
+        <img src="http://192.168.1.205:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png" alt="Logo Premio Excelencia Energética">
       </div>
       <ul class="lista-proyectos">
         ${proyectos.map((p, i) => `
@@ -92,23 +92,65 @@ function mostrarListaProyectos(proyectos) {
   });
 }
 
+// Modal de detalles con las redes
+// Modal de detalles con las redes
+
+const REDES_ICONOS = {
+  linkedin:  'http://192.168.1.205:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg',
+  x:         'https://cdn.simpleicons.org/x/000000',
+  instagram: 'https://cdn.simpleicons.org/instagram/E4405F',
+  facebook:  'https://cdn.simpleicons.org/facebook/1877F2'
+};
+
+// Convierte "linkedin:marlon/instagram:marlon.dev" en [{red, nombre}, ...]
+function parseRedesSociales(valor) {
+  if (!valor || !valor.trim()) return [];
+  return valor.split('/').filter(Boolean).map(par => {
+    const [red, ...resto] = par.split(':');
+    return { red: red.trim(), nombre: resto.join(':').trim() };
+  }).filter(f => REDES_ICONOS[f.red]);
+}
+
 function mostrarDetalleProyecto(proyecto) {
   modalTitulo.textContent = proyecto.nombre;
 
-  // 👉 Si no hay foto, usa una imagen por defecto (ajusta la ruta a la real en tu servidor)
-  const RUTA_IMAGEN_DEFECTO = 'http://192.168.18.22:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png';
+  const RUTA_IMAGEN_DEFECTO = 'http://192.168.1.205:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png';
   const fotoProyecto = proyecto.foto && proyecto.foto.trim() ? proyecto.foto : RUTA_IMAGEN_DEFECTO;
 
-  // 👉 Subcategoría es opcional: solo se pinta si existe
   const subcategoriaHtml = proyecto.subcategoria && proyecto.subcategoria.trim()
     ? `<span class="detalle-proyecto__subcategoria">${proyecto.subcategoria}</span>`
     : '';
 
-  // 👉 QR es opcional: solo se pinta si existe
+  // Organización + íconos de redes sociales debajo
+  const redesSociales = parseRedesSociales(proyecto.red_social);
+  const redesHtml = redesSociales.length
+    ? `<div class="detalle-proyecto__redes">
+        ${redesSociales.map(r => `
+          <span class="detalle-proyecto__red-item">
+            <img class="detalle-proyecto__red-icon"
+                 src="${REDES_ICONOS[r.red]}"
+                 alt="${r.red}">
+            <span class="detalle-proyecto__red-nombre">${r.nombre}</span>
+          </span>
+        `).join('')}
+      </div>`
+    : '';
+
+  const organizacionHtml = proyecto.organizacion && proyecto.organizacion.trim()
+    ? `
+      <p class="detalle-proyecto__organizacion">
+        <span class="detalle-proyecto__organizacion-label">Organización:</span>
+        ${proyecto.organizacion}
+      </p>
+      ${redesHtml}
+    `
+    : '';
+
+  // El QR ahora es una imagen ya subida por el usuario, servida directo por el backend
   const qrHtml = proyecto.qr && proyecto.qr.trim()
     ? `
-      <div class="detalle-proyecto__qr-wrap">
-        <img class="detalle-proyecto__qr" src="${proyecto.qr}" alt="Código QR del proyecto">
+      <div class="detalle-proyecto__qr-wrap" id="qr-wrap">
+        <img class="detalle-proyecto__qr" id="qr-img" src="${proyecto.qr}" alt="Código QR del proyecto">
       </div>
     `
     : '';
@@ -120,12 +162,19 @@ function mostrarDetalleProyecto(proyecto) {
             onerror="this.src='${RUTA_IMAGEN_DEFECTO}'">
       </div>
       <div class="detalle-proyecto__info">
-      <p class="detalle-proyecto__descripcion">${proyecto.descripcion}</p>
         <div class="detalle-proyecto__badges">
           <span class="detalle-proyecto__categoria">${proyecto.categoria}</span>
           ${subcategoriaHtml}
         </div>
-        ${qrHtml}
+        <p class="detalle-proyecto__descripcion">${proyecto.descripcion}</p>
+
+        <div class="detalle-proyecto__org-qr-row">
+          <div class="detalle-proyecto__organizacion-wrap">
+            ${organizacionHtml}
+          </div>
+          ${qrHtml}
+        </div>
+
         <button class="btn-regresar" id="btn-regresar-proyecto">← Regresar</button>
       </div>
     </div>

@@ -200,6 +200,13 @@
     grid-template-columns: 1fr;
     gap: 32px;
   }
+
+   .sde-footer__logos {
+    display: flex;
+    align-items: center;
+    gap: 140px;
+    flex-wrap: wrap;
+}
 }
 
 

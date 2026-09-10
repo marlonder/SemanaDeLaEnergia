@@ -32,10 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     $archivoImagen = $_FILES['imagen'] ?? null;
+    $archivoQr = $_FILES['qr'] ?? null;
 
     $resultado = $id !== ''
-    ? $controller->actualizar((int)$id, $datos, $archivoImagen)
-    : $controller->crear($datos, $_SESSION['usuario_id'], $archivoImagen);
+    ? $controller->actualizar((int)$id, $datos, $archivoImagen, $archivoQr)
+    : $controller->crear($datos, $_SESSION['usuario_id'], $archivoImagen, $archivoQr);
     
     header('Location: Listar_proyectos.php?ok=' . ($resultado['ok'] ? 1 : 0) . '&msg=' . urlencode($resultado['msg']));
     exit;
@@ -129,6 +130,69 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
     @media (max-width: 600px) {
         .form-grid { grid-template-columns: 1fr; }
     }
+
+    /*
+    REDERS SOCIALES
+     */
+
+  .redes-sociales-wrapper { position: relative; margin-bottom: 1rem; }
+
+    .red-fila {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+    .red-fila img { width: 20px; height: 20px; flex-shrink: 0; }
+    .red-fila input {
+        flex: 1;
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .red-fila .btn-quitar {
+        background: none;
+        border: none;
+        color: #c0392b;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .btn-add-red {
+        width: 30px; height: 30px;
+        border-radius: 50%;
+        border: none;
+        background: #2d6cdf;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .redes-picker {
+        position: absolute;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+        padding: 6px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        min-width: 160px;
+    }
+    .red-opcion {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: none;
+        border: none;
+        padding: 6px 10px;
+        text-align: left;
+        cursor: pointer;
+    }
+    .red-opcion img { width: 18px; height: 18px; }
+    .red-opcion:hover { background: #f2f2f2; }
+    .red-opcion.disabled { opacity: .4; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -176,16 +240,46 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
                     </div>
 
                     <div>
-                        <label>Link (Para el QR)</label>
-                        <input type="text" name="link"
-                               value="<?= htmlspecialchars($proyectoEditar['link'] ?? '') ?>">
+                        <label>Código QR (imagen)</label>
+                        <input type="file" name="qr" id="inputQr" accept="image/png, image/jpeg, image/webp, image/gif">
+                        <?php if (!empty($proyectoEditar['link'])): ?>
+                            <p style="font-size:12px;margin-top:4px;">
+                                Actual:
+                                <img src="media/qr/<?= htmlspecialchars($proyectoEditar['link']) ?>"
+                                    alt="" style="height:40px;vertical-align:middle;">
+                            </p>
+                        <?php endif; ?>
                     </div>
 
-                    <div>
-                        <label>Red social</label>
-                        <input type="text" name="red_social"
-                               value="<?= htmlspecialchars($proyectoEditar['red_social'] ?? '') ?>">
+                   <div class="redes-sociales-wrapper">
+                        <label>Redes sociales</label>
+
+                        <div id="redesSocialesList"></div>
+
+                        <div class="add-red-container">
+                            <button type="button" id="btnAddRed" class="btn-add-red">+</button>
+
+                            <div id="redesPicker" class="redes-picker" style="display:none;">
+                                <button type="button" class="red-opcion" data-red="linkedin">
+                                    <img src="http://192.168.1.205:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg" alt="LinkedIn"> LinkedIn
+                                </button>
+                                <button type="button" class="red-opcion" data-red="x">
+                                    <img src="https://cdn.simpleicons.org/x/000000" alt="X"> X
+                                </button>
+                                <button type="button" class="red-opcion" data-red="instagram">
+                                    <img src="https://cdn.simpleicons.org/instagram/E4405F" alt="Instagram"> Instagram
+                                </button>
+                                <button type="button" class="red-opcion" data-red="facebook">
+                                    <img src="https://cdn.simpleicons.org/facebook/1877F2" alt="Facebook"> Facebook
+                                </button>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="red_social" id="redSocialHidden"
+                            value="<?= htmlspecialchars($proyectoEditar['red_social'] ?? '') ?>">
                     </div>
+
+
 
                     <div>
                         <label>Imagen</label>
@@ -366,6 +460,103 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
             this.value = '';
         }
     });
+
+    document.getElementById('inputQr').addEventListener('change', function () {
+        var permitido = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (this.files.length > 0 && permitido.indexOf(this.files[0].type) === -1) {
+            alert('Formato no permitido. Solo imágenes JPG, PNG, WEBP o GIF.');
+            this.value = '';
+        }
+    });
+    
+    //Red social 
+    (function () {
+        const REDES = {
+            linkedin:  { label: 'LinkedIn',  icon: 'http://192.168.1.205:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg',  placeholder: 'usuario o /in/tu-perfil' },
+            x:         { label: 'X',         icon: 'https://cdn.simpleicons.org/x/000000',          placeholder: '@usuario' },
+            instagram: { label: 'Instagram', icon: 'https://cdn.simpleicons.org/instagram/E4405F',  placeholder: '@usuario' },
+            facebook:  { label: 'Facebook',  icon: 'https://cdn.simpleicons.org/facebook/1877F2',   placeholder: 'nombre de página' }
+        };
+
+     
+        const listEl   = document.getElementById('redesSocialesList');
+        const hiddenEl = document.getElementById('redSocialHidden');
+        const btnAdd   = document.getElementById('btnAddRed');
+        const picker   = document.getElementById('redesPicker');
+
+        function parseValorGuardado(valor) {
+            if (!valor || !valor.trim()) return [{ red: 'linkedin', nombre: '' }];
+            const filas = valor.split('/').filter(Boolean).map(par => {
+                const [red, ...resto] = par.split(':');
+                return { red: red.trim(), nombre: resto.join(':').trim() };
+            }).filter(f => REDES[f.red]);
+            return filas.length ? filas : [{ red: 'linkedin', nombre: '' }];
+        }
+
+        let filas = parseValorGuardado(hiddenEl.value);
+
+        function render() {
+            listEl.innerHTML = '';
+            filas.forEach((fila, idx) => {
+                const cfg = REDES[fila.red] || REDES.linkedin;
+                const div = document.createElement('div');
+                div.className = 'red-fila';
+                div.innerHTML = `
+                    <img src="${cfg.icon}" alt="${cfg.label}">
+                    <input type="text" placeholder="${cfg.placeholder}" value="${fila.nombre.replace(/"/g,'&quot;')}">
+                    <button type="button" class="btn-quitar" title="Quitar">&times;</button>
+                `;
+                div.querySelector('input').addEventListener('input', e => {
+                    filas[idx].nombre = e.target.value;
+                    actualizarHidden();
+                });
+                div.querySelector('.btn-quitar').addEventListener('click', () => {
+                    filas.splice(idx, 1);
+                    render();
+                    actualizarHidden();
+                });
+                listEl.appendChild(div);
+            });
+            actualizarPickerDisponibilidad();
+        }
+
+        function actualizarHidden() {
+            hiddenEl.value = filas
+                .filter(f => f.nombre.trim() !== '')
+                .map(f => `${f.red}:${f.nombre.trim()}`)
+                .join('/');
+        }
+
+        function actualizarPickerDisponibilidad() {
+            const usadas = filas.map(f => f.red);
+            picker.querySelectorAll('.red-opcion').forEach(btn => {
+                btn.classList.toggle('disabled', usadas.includes(btn.dataset.red));
+            });
+        }
+
+        btnAdd.addEventListener('click', () => {
+            picker.style.display = picker.style.display === 'none' ? 'flex' : 'none';
+        });
+
+        picker.querySelectorAll('.red-opcion').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const red = btn.dataset.red;
+                if (filas.some(f => f.red === red)) return;
+                filas.push({ red, nombre: '' });
+                render();
+                picker.style.display = 'none';
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!picker.contains(e.target) && e.target !== btnAdd) {
+                picker.style.display = 'none';
+            }
+        });
+
+        render();
+        actualizarHidden();
+    })();
 </script>
 </body>
 </html>
