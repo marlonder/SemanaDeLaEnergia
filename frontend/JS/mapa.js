@@ -382,3 +382,5 @@ function limpiarBusqueda() {
 }
 
 cargarMapa();
+
+

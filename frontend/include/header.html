@@ -8,6 +8,8 @@
 
     <!-- Logos -->
     <div class="sde-header__logos">
+      
+      
       <a href="https://semanadelaenergia.olade.org" class="sde-header__logo-link">
         <img
           src="https://semanadelaenergia.olade.org/wp-content/uploads/2025/02/logoSemanaEnergia.png"
@@ -21,13 +23,35 @@
           src="https://semanadelaenergia.olade.org/wp-content/uploads/2025/02/Logotipo-OLACDE2026-04-1200x514.png"
           alt="OLACDE"
           class="sde-header__logo sde-header__logo--olacde"
+          >
+      </a>
+      <a href="" class="sde-header__logo-link">
+        <img
+          src="http://192.168.18.22:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png"
+          alt="Proyectos a la Excelencia"
+          class="sde-header__logo sde-header__logo--main"
         >
       </a>
     </div>
 
-    <!-- Navegación principal -->
-   
+    <!-- Buscador y refrescar del mapa -->
+    <div class="sde-header__mapa-controles">
+      <div id="panel-paises" class="panel-paises">
+        <div class="panel-paises__buscar-wrapper">
+          <input type="text" id="buscar-pais" class="panel-paises__input" placeholder="Buscar país...">
+          <button id="btn-limpiar-busqueda" class="btn-limpiar-busqueda" type="button" title="Limpiar">&times;</button>
+        </div>
+        <ul id="lista-paises" class="lista-paises"></ul>
+      </div>
 
-   
+      <button id="btn-refrescar" class="btn-refrescar" title="Refrescar mapa">
+        <span class="btn-refrescar__icono">⟳</span>
+        Refrescar
+      </button>
+    </div>
+
+    <!-- Navegación principal -->
+
+
   </div>
 </header>

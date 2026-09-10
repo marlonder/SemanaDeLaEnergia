@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // =====================================================
 // URL pública base donde se sirven las imágenes de proyectos
 // =====================================================
-const URL_BASE_IMAGENES = 'http://192.168.1.205:8080/premios/.../media/';
+const URL_BASE_IMAGENES = 'http://192.168.18.22:8080/Premios_a_la_Excelencia/media/';
 
 // =====================================================
 // Validación del parámetro

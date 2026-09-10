@@ -34,9 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $archivoImagen = $_FILES['imagen'] ?? null;
 
     $resultado = $id !== ''
-        ? $controller->actualizar((int)$id, $datos, $archivoImagen)
-        : $controller->crear($datos, $_SESSION['usuario_id']);
-
+    ? $controller->actualizar((int)$id, $datos, $archivoImagen)
+    : $controller->crear($datos, $_SESSION['usuario_id'], $archivoImagen);
+    
     header('Location: Listar_proyectos.php?ok=' . ($resultado['ok'] ? 1 : 0) . '&msg=' . urlencode($resultado['msg']));
     exit;
 }
@@ -154,7 +154,7 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
         <div class="panel">
             <h2><?= $proyectoEditar ? 'Editar proyecto' : 'Nuevo proyecto' ?></h2>
 
-            <form method="POST" action="Listar_proyectos.php">
+            <form method="POST" action="Listar_proyectos.php" enctype="multipart/form-data">
                 <input type="hidden" name="id" value="<?= $proyectoEditar ? (int)$proyectoEditar['id'] : '' ?>">
 
                 <div class="form-grid">

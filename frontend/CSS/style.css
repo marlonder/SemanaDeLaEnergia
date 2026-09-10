@@ -14,7 +14,7 @@ body {
   justify-content: center;
   max-width: 1050px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 5rem 19rem;
   flex: 1;
 }
 
@@ -64,7 +64,7 @@ body {
 .btn-limpiar-busqueda {
   position: absolute;
   right: 8px;
-  top: 40%;
+  top: 49%;
   transform: translateY(-50%);
   background: none;
   border: none;
@@ -211,7 +211,7 @@ body {
   width: 100%;
   box-sizing: border-box;
   padding: 6px 8px;
-  margin-bottom: 8px;
+  margin-bottom: 0px;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
@@ -239,10 +239,10 @@ body {
 @media (min-width: 768px) and (max-width: 1366px) {
   .layout {
     max-width: 700px;
-    padding: 3rem 2rem;
+    padding: 3rem 11rem;
   }
   #contenedor-mapa {
-    max-width: 650px;
+    max-width: 750px;
   }
   .panel-info {
     max-width: 460px;
@@ -268,7 +268,7 @@ body {
 .mapa-wrapper {
   position: relative; /* clave: el popover se posiciona respecto a esto */
   width: 100%;
-  max-width: 750px;
+  max-width: 1050px;
   text-align: left;
 }
 

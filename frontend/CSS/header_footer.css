@@ -94,7 +94,7 @@
 
 .sde-footer__top{
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-columns: 3.4fr 3fr 0fr;
   gap: 40px;
   align-items: start;
 }
@@ -199,5 +199,75 @@
   .sde-footer__top{
     grid-template-columns: 1fr;
     gap: 32px;
+  }
+}
+
+
+
+/* ============================================================
+   OVERRIDES: buscador + refrescar dentro del HEADER
+   (el buscador/botón originalmente flotaban sobre el mapa;
+   estos overrides solo aplican cuando están dentro del header)
+   ============================================================ */
+
+.sde-header__container{
+  justify-content: space-between; /* logos a la izq, controles a la der */
+  flex-wrap: wrap;
+}
+
+.sde-header__mapa-controles{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Anula el position:absolute que .panel-paises usa sobre el mapa */
+.sde-header__mapa-controles .panel-paises{
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 220px;
+  max-height: none;
+  overflow: visible;
+  box-shadow: none;
+  padding: 0;
+  z-index: 10;
+}
+
+/* La lista de sugerencias sí debe flotar, pero debajo del input */
+.sde-header__mapa-controles .lista-paises{
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+/* El botón refrescar no debe llevar el margin-bottom pensado para estar sobre el mapa */
+.sde-header__mapa-controles .btn-refrescar{
+  margin-bottom: 0;
+  margin-right: 0;
+  flex-shrink: 0;
+}
+
+/* Responsive: en pantallas chicas, los controles bajan debajo de los logos */
+@media (max-width: 720px){
+  .sde-header__container{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sde-header__mapa-controles{
+    width: 100%;
+    justify-content: space-between;
+  }
+  .sde-header__mapa-controles .panel-paises{
+    width: 100%;
   }
 }
