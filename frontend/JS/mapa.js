@@ -13,6 +13,76 @@ let zoomMapa = null;       // 👉 NUEVO: comportamiento de zoom de d3
 let proyeccionMapa = null; // 👉 NUEVO: guardamos proyección y path para
 let pathMapa = null;       //    poder calcular el zoom al Caribe después
 let datosCaribe = null;    // 👉 NUEVO: geojson del Caribe, para calcular límites
+let datosContinental = null;
+
+
+
+// Busca el centro de un país, ya sea continental, del Caribe (polígono) o isla-punto
+function obtenerCentroidePorNombre(nombre) {
+  const featCont = datosContinental.features.find(f => f.properties.name === nombre);
+  if (featCont) return pathMapa.centroid(featCont);
+
+  const featCar = datosCaribe.features.find(f => f.properties.name === nombre);
+  if (featCar) return pathMapa.centroid(featCar);
+
+  const islaPunto = (window.ISLAS_PUNTO || []).find(i => i.name === nombre);
+  if (islaPunto) return proyeccionMapa(islaPunto.coords);
+
+  return null;
+}
+
+// Dibuja un pin verde sobre cada país con proyectos
+function marcarPaisesConProyectos(nombres) {
+  grupoMapa.selectAll('.capa-marcadores-proyecto').remove();
+
+  const capa = grupoMapa.append('g').attr('class', 'capa-marcadores-proyecto');
+
+  const ESCALA_PIN = 0.4; // 👈 ajusta este número para hacerlo más grande/chico
+
+  nombres.forEach(nombre => {
+    const centro = obtenerCentroidePorNombre(nombre);
+    if (!centro) {
+      console.warn(`No se pudo ubicar "${nombre}" para el marcador.`);
+      return;
+    }
+    const [x, y] = centro;
+
+    const grupoPin = capa.append('g')
+      .attr('class', 'marcador-proyecto-grupo')
+      .attr('transform', `translate(${x}, ${y}) scale(${ESCALA_PIN})`)
+      .style('cursor', 'pointer')
+      .on('click', function (evento) {
+        evento.stopPropagation();
+        abrirModal(nombre);
+      });
+
+    grupoPin.append('path')
+      .attr('class', 'marcador-proyecto')
+      .attr('data-name', nombre)
+      .attr('d', 'M0,-14 C-7,-14 -12,-9 -12,-2 C-12,7 0,14 0,14 C0,14 12,7 12,-2 C12,-9 7,-14 0,-14 Z')
+      .style('fill', '#2ecc71')
+      .style('stroke', '#1e8449')
+      .style('stroke-width', 1);
+
+    grupoPin.append('circle')
+      .attr('cx', 0)
+      .attr('cy', -5)
+      .attr('r', 4)
+      .style('fill', 'white')
+      .style('pointer-events', 'none');
+  });
+}
+
+// Pide al backend la lista de países con proyectos y los marca
+async function cargarPaisesConProyectos() {
+  try {
+    const respuesta = await fetch(`${API_BASE_URL}/paises_con_proyectos.php`);
+    const paises = await respuesta.json(); // ej: ["Ecuador", "Santa Lucía"]
+    marcarPaisesConProyectos(paises);
+  } catch (err) {
+    console.error('No se pudo cargar la lista de países con proyectos', err);
+  }
+}
 
 async function cargarMapa() {
   const [continental, caribe] = await Promise.all([
@@ -22,6 +92,7 @@ async function cargarMapa() {
 
   
   datosCaribe = caribe;
+  datosContinental = continental;
 
   // le pasamos los datos del Caribe a modal.js para que ya los tenga listos
   // (evita que modal.js tenga que volver a pedirlos por red)
@@ -47,11 +118,12 @@ async function cargarMapa() {
   // 👉 NUEVO: zoom/pan sobre el mapa principal. Lo dejamos entre 1x (normal)
   // y 8x (bien cerca), y limitamos cuánto se puede arrastrar fuera del área.
   zoomMapa = d3.zoom()
-    .scaleExtent([1, 8])
-    .translateExtent([[0, 0], [ANCHO, ALTO]])
-    .on('zoom', (evento) => {
-      grupoMapa.attr('transform', evento.transform);
-    });
+  .scaleExtent([1, 8])
+  .translateExtent([[0, 0], [ANCHO, ALTO]])
+  .filter(() => false) 
+  .on('zoom', (evento) => {
+    grupoMapa.attr('transform', evento.transform);
+  });
 
   svg.call(zoomMapa);
 
@@ -111,6 +183,7 @@ async function cargarMapa() {
 
   // Ya con los dos geojson cargados, armamos el listado de países
   construirListaPaises(continental, caribe);
+  cargarPaisesConProyectos();
 }
 
 // Calcula dónde debe aparecer el popover, tomando como referencia
@@ -381,6 +454,8 @@ function limpiarBusqueda() {
   svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
 }
 
-cargarMapa();
 
+
+
+cargarMapa();
 

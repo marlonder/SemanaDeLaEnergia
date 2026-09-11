@@ -23,7 +23,7 @@ modalOverlay.addEventListener('click', (e) => {
 // =====================================================
 
 
-const API_BASE_URL = 'http://192.168.1.205:8080/Premios_a_la_Excelencia'; 
+const API_BASE_URL = 'http://192.168.18.22:8080/Premios_a_la_Excelencia'; 
 // 👉 abre el modal ya reutilizado, pero mostrando la LISTA de proyectos
 async function abrirModal(nombrePais) {
   paisActualProyectos = nombrePais;
@@ -55,10 +55,11 @@ async function abrirModal(nombrePais) {
   }
 }
 
-let proyectosActuales = []; 
+let categoriaActiva = 'todas'; // 👈 guarda el filtro seleccionado
 
 function mostrarListaProyectos(proyectos) {
   proyectosActuales = proyectos;
+  categoriaActiva = 'todas'; // reinicia el filtro cada vez que se abre un país nuevo
 
   modalTitulo.textContent = `Proyectos en ${paisActualProyectos}`;
   modalContenido.classList.remove('vacio');
@@ -68,22 +69,77 @@ function mostrarListaProyectos(proyectos) {
     return;
   }
 
-  modalContenido.innerHTML = `
-    <div class="modal-proyectos__layout">
-      <div class="modal-proyectos__logo">
-        <img src="http://192.168.1.205:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png" alt="Logo Premio Excelencia Energética">
-      </div>
-      <ul class="lista-proyectos">
-        ${proyectos.map((p, i) => `
-          <li class="lista-proyectos__item" data-index="${i}">
-            <span class="lista-proyectos__nombre">${p.nombre}</span>
-            <span class="lista-proyectos__categoria">${p.categoria}</span>
-          </li>
-        `).join('')}
-      </ul>
+  renderModalListado();
+}
+
+// 👉 arma las categorías únicas presentes en los proyectos del país actual
+function obtenerCategoriasUnicas(proyectos) {
+  const categorias = proyectos
+    .map(p => p.categoria)
+    .filter(Boolean);
+  return [...new Set(categorias)];
+}
+
+// 👉 dibuja filtros + lista, respetando categoriaActiva
+function renderModalListado() {
+  const categorias = obtenerCategoriasUnicas(proyectosActuales);
+
+  const proyectosFiltrados = categoriaActiva === 'todas'
+    ? proyectosActuales
+    : proyectosActuales.filter(p => p.categoria === categoriaActiva);
+
+  const filtrosHtml = `
+    <div class="filtros-categoria">
+      <button class="filtro-categoria__btn ${categoriaActiva === 'todas' ? 'activo' : ''}" data-categoria="todas">
+        Todas
+      </button>
+      ${categorias.map(cat => `
+        <button class="filtro-categoria__btn ${categoriaActiva === cat ? 'activo' : ''}" data-categoria="${cat}">
+          ${cat}
+        </button>
+      `).join('')}
     </div>
   `;
 
+  const listaHtml = proyectosFiltrados.length
+    ? `
+      <ul class="lista-proyectos">
+        ${proyectosFiltrados.map((p) => {
+          const idxReal = proyectosActuales.indexOf(p);
+          return `
+            <li class="lista-proyectos__item" data-index="${idxReal}">
+              <span class="lista-proyectos__nombre">${p.nombre}</span>
+              <span class="lista-proyectos__meta">
+                ${p.categoria}${p.organizacion ? ` - ${p.organizacion}` : ''}
+              </span>
+            </li>
+          `;
+        }).join('')}
+      </ul>
+    `
+    : `<p class="lista-proyectos__sin-resultados">No hay proyectos en esta categoría.</p>`;
+
+  modalContenido.innerHTML = `
+    <div class="modal-proyectos__layout">
+      <div class="modal-proyectos__logo">
+        <img src="http://192.168.18.22:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png" alt="Logo Premio Excelencia Energética">
+      </div>
+      <div class="modal-proyectos__cuerpo">
+        ${filtrosHtml}
+        ${listaHtml}
+      </div>
+    </div>
+  `;
+
+  // clic en cada botón de filtro
+  modalContenido.querySelectorAll('.filtro-categoria__btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      categoriaActiva = btn.dataset.categoria;
+      renderModalListado();
+    });
+  });
+
+  // clic en cada proyecto de la lista
   modalContenido.querySelectorAll('.lista-proyectos__item').forEach(item => {
     item.addEventListener('click', () => {
       const idx = Number(item.dataset.index);
@@ -96,7 +152,7 @@ function mostrarListaProyectos(proyectos) {
 // Modal de detalles con las redes
 
 const REDES_ICONOS = {
-  linkedin:  'http://192.168.1.205:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg',
+  linkedin:  'http://192.168.18.22:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg',
   x:         'https://cdn.simpleicons.org/x/000000',
   instagram: 'https://cdn.simpleicons.org/instagram/E4405F',
   facebook:  'https://cdn.simpleicons.org/facebook/1877F2'
@@ -114,7 +170,7 @@ function parseRedesSociales(valor) {
 function mostrarDetalleProyecto(proyecto) {
   modalTitulo.textContent = proyecto.nombre;
 
-  const RUTA_IMAGEN_DEFECTO = 'http://192.168.1.205:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png';
+  const RUTA_IMAGEN_DEFECTO = 'http://192.168.18.22:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png';
   const fotoProyecto = proyecto.foto && proyecto.foto.trim() ? proyecto.foto : RUTA_IMAGEN_DEFECTO;
 
   const subcategoriaHtml = proyecto.subcategoria && proyecto.subcategoria.trim()

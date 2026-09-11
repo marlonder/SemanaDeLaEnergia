@@ -478,10 +478,18 @@ body {
 }
 .lista-proyectos__nombre {
   font-weight: 500;
-  white-space: normal;   /* 👈 esto arregla el texto partido palabra por palabra */
+  white-space: normal;   
   word-break: normal;
+  text-align: justify;
   overflow-wrap: break-word;
   line-height: 1.3;
+}
+
+.lista-proyectos__meta {
+  display: block;
+  font-size: 0.85em;
+  color: #444968;
+  text-align: left;
 }
 .lista-proyectos__categoria {
   font-size: 0.85em;
@@ -674,4 +682,35 @@ body {
 .detalle-proyecto__qr-loading {
   font-size: 11px;
   color: #6b7280;
+}
+
+
+/*filtros */
+.filtros-categoria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.filtro-categoria__btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid #2ecc71;
+  background: #fff;
+  color: #1e8449;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.filtro-categoria__btn:hover {
+  background: #e9f9f0;
+}
+
+.filtro-categoria__btn.activo {
+  background: #2ecc71;
+  border-color: #1e8449;
+  color: #fff;
 }

@@ -15,8 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // =====================================================
 // URLs públicas base donde se sirven imágenes y QR de proyectos
 // =====================================================
-const URL_BASE_IMAGENES = 'http://192.168.1.205:8080/Premios_a_la_Excelencia/media/proyecto/';
-const URL_BASE_QR       = 'http://192.168.1.205:8080/Premios_a_la_Excelencia/media/qr/';
+const URL_BASE_IMAGENES = 'http://192.168.18.22:8080/Premios_a_la_Excelencia/media/proyecto/';
+const URL_BASE_QR       = 'http://192.168.18.22:8080/Premios_a_la_Excelencia/media/qr/';
 
 $nombrePais = trim($_GET['pais'] ?? '');
 

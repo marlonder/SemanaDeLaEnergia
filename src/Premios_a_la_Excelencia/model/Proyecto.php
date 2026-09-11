@@ -173,4 +173,19 @@ class Proyecto
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+
+    public function listarPaisesConProyectos()
+{
+    $sql = "SELECT DISTINCT pa.nombre AS pais
+            FROM {$this->tabla} p
+            INNER JOIN pais pa ON pa.id = p.id_pais
+            WHERE p.estado = 1";
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    $filas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return array_map(fn($f) => $f['pais'], $filas);
+}
 }

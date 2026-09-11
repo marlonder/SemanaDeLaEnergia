@@ -261,7 +261,7 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
 
                             <div id="redesPicker" class="redes-picker" style="display:none;">
                                 <button type="button" class="red-opcion" data-red="linkedin">
-                                    <img src="http://192.168.1.205:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg" alt="LinkedIn"> LinkedIn
+                                    <img src="http://192.168.18.22:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg" alt="LinkedIn"> LinkedIn
                                 </button>
                                 <button type="button" class="red-opcion" data-red="x">
                                     <img src="https://cdn.simpleicons.org/x/000000" alt="X"> X
@@ -472,7 +472,7 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
     //Red social 
     (function () {
         const REDES = {
-            linkedin:  { label: 'LinkedIn',  icon: 'http://192.168.1.205:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg',  placeholder: 'usuario o /in/tu-perfil' },
+            linkedin:  { label: 'LinkedIn',  icon: 'http://192.168.18.22:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg',  placeholder: 'usuario o /in/tu-perfil' },
             x:         { label: 'X',         icon: 'https://cdn.simpleicons.org/x/000000',          placeholder: '@usuario' },
             instagram: { label: 'Instagram', icon: 'https://cdn.simpleicons.org/instagram/E4405F',  placeholder: '@usuario' },
             facebook:  { label: 'Facebook',  icon: 'https://cdn.simpleicons.org/facebook/1877F2',   placeholder: 'nombre de página' }

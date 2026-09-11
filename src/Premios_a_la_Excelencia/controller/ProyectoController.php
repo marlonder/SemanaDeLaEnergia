@@ -222,4 +222,10 @@ class ProyectoController
     {
         return $this->proyecto->listarActivosPorPais($nombrePais);
     }
+
+
+    public function listarPaisesConProyectos()
+    {
+        return $this->proyecto->listarPaisesConProyectos();
+    }
 }
