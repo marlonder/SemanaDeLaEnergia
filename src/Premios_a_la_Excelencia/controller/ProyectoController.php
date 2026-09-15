@@ -50,9 +50,9 @@ class ProyectoController
 
     // ---------- Proyecto ----------
 
-    public function listar()
+    public function listar($busqueda = '', $pagina = 1, $porPagina = 10)
     {
-        return $this->proyecto->listar();
+        return $this->proyecto->listar($busqueda, $pagina, $porPagina);
     }
 
     public function obtener($id)
@@ -221,5 +221,11 @@ class ProyectoController
     public function listarActivosPorPais($nombrePais)
     {
         return $this->proyecto->listarActivosPorPais($nombrePais);
+    }
+
+
+    public function listarPaisesConProyectos()
+    {
+        return $this->proyecto->listarPaisesConProyectos();
     }
 }

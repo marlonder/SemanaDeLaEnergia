@@ -13,6 +13,76 @@ let zoomMapa = null;       // 👉 NUEVO: comportamiento de zoom de d3
 let proyeccionMapa = null; // 👉 NUEVO: guardamos proyección y path para
 let pathMapa = null;       //    poder calcular el zoom al Caribe después
 let datosCaribe = null;    // 👉 NUEVO: geojson del Caribe, para calcular límites
+let datosContinental = null;
+
+
+
+// Busca el centro de un país, ya sea continental, del Caribe (polígono) o isla-punto
+function obtenerCentroidePorNombre(nombre) {
+  const featCont = datosContinental.features.find(f => f.properties.name === nombre);
+  if (featCont) return pathMapa.centroid(featCont);
+
+  const featCar = datosCaribe.features.find(f => f.properties.name === nombre);
+  if (featCar) return pathMapa.centroid(featCar);
+
+  const islaPunto = (window.ISLAS_PUNTO || []).find(i => i.name === nombre);
+  if (islaPunto) return proyeccionMapa(islaPunto.coords);
+
+  return null;
+}
+
+// Dibuja un pin verde sobre cada país con proyectos
+function marcarPaisesConProyectos(nombres) {
+  grupoMapa.selectAll('.capa-marcadores-proyecto').remove();
+
+  const capa = grupoMapa.append('g').attr('class', 'capa-marcadores-proyecto');
+
+  const ESCALA_PIN = 0.4; // 👈 ajusta este número para hacerlo más grande/chico
+
+  nombres.forEach(nombre => {
+    const centro = obtenerCentroidePorNombre(nombre);
+    if (!centro) {
+      console.warn(`No se pudo ubicar "${nombre}" para el marcador.`);
+      return;
+    }
+    const [x, y] = centro;
+
+    const grupoPin = capa.append('g')
+      .attr('class', 'marcador-proyecto-grupo')
+      .attr('transform', `translate(${x}, ${y}) scale(${ESCALA_PIN})`)
+      .style('cursor', 'pointer')
+      .on('click', function (evento) {
+        evento.stopPropagation();
+        abrirModal(nombre);
+      });
+
+    grupoPin.append('path')
+      .attr('class', 'marcador-proyecto')
+      .attr('data-name', nombre)
+      .attr('d', 'M0,-14 C-7,-14 -12,-9 -12,-2 C-12,7 0,14 0,14 C0,14 12,7 12,-2 C12,-9 7,-14 0,-14 Z')
+      .style('fill', '#2ecc71')
+      .style('stroke', '#1e8449')
+      .style('stroke-width', 1);
+
+    grupoPin.append('circle')
+      .attr('cx', 0)
+      .attr('cy', -5)
+      .attr('r', 4)
+      .style('fill', 'white')
+      .style('pointer-events', 'none');
+  });
+}
+
+// Pide al backend la lista de países con proyectos y los marca
+async function cargarPaisesConProyectos() {
+  try {
+    const respuesta = await fetch(`${API_BASE_URL}/paises_con_proyectos.php`);
+    const paises = await respuesta.json(); // ej: ["Ecuador", "Santa Lucía"]
+    marcarPaisesConProyectos(paises);
+  } catch (err) {
+    console.error('No se pudo cargar la lista de países con proyectos', err);
+  }
+}
 
 async function cargarMapa() {
   const [continental, caribe] = await Promise.all([
@@ -22,6 +92,7 @@ async function cargarMapa() {
 
   
   datosCaribe = caribe;
+  datosContinental = continental;
 
   // le pasamos los datos del Caribe a modal.js para que ya los tenga listos
   // (evita que modal.js tenga que volver a pedirlos por red)
@@ -47,11 +118,12 @@ async function cargarMapa() {
   // 👉 NUEVO: zoom/pan sobre el mapa principal. Lo dejamos entre 1x (normal)
   // y 8x (bien cerca), y limitamos cuánto se puede arrastrar fuera del área.
   zoomMapa = d3.zoom()
-    .scaleExtent([1, 8])
-    .translateExtent([[0, 0], [ANCHO, ALTO]])
-    .on('zoom', (evento) => {
-      grupoMapa.attr('transform', evento.transform);
-    });
+  .scaleExtent([1, 8])
+  .translateExtent([[0, 0], [ANCHO, ALTO]])
+  .filter(() => false) 
+  .on('zoom', (evento) => {
+    grupoMapa.attr('transform', evento.transform);
+  });
 
   svg.call(zoomMapa);
 
@@ -106,11 +178,12 @@ async function cargarMapa() {
     .on('click', function (evento) {
       evento.stopPropagation();
       const { x, y } = posicionPopoverDesdeEtiqueta();
-      abrirPopoverCaribe(x, y);
+      //abrirPopoverCaribe(x, y);
     });
 
   // Ya con los dos geojson cargados, armamos el listado de países
   construirListaPaises(continental, caribe);
+  cargarPaisesConProyectos();
 }
 
 // Calcula dónde debe aparecer el popover, tomando como referencia
@@ -207,9 +280,6 @@ function normalizarTexto(txt) {
 // --- Listado / búsqueda de países ---
 function construirListaPaises(continental, caribe) {
   const listaEl = document.getElementById('lista-paises');
-  const inputBuscar = document.getElementById('buscar-pais');
-  const btnLimpiar = document.getElementById('btn-limpiar-busqueda');
-  const wrapper = document.querySelector('.panel-paises__buscar-wrapper');
   if (!listaEl) return;
 
   const nombresContinental = continental.features.map(d => ({
@@ -227,110 +297,58 @@ function construirListaPaises(continental, caribe) {
     tipo: 'caribe'
   }));
 
-  const todosLosPaises = [
+  window.__todosLosPaises = [
     ...nombresContinental,
     ...nombresCaribePoligonos,
     ...nombresCaribePuntos
   ].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
-  // 👉 índice del item resaltado con las flechas
-  let indiceActivo = -1;
-
-  function renderItems(paises) {
-    listaEl.innerHTML = paises.map(p => `
-      <li class="lista-paises__item" data-nombre="${p.nombre}" data-tipo="${p.tipo}">
-        ${p.nombre}
-      </li>
-    `).join('');
-
-    listaEl.querySelectorAll('.lista-paises__item').forEach(item => {
-      item.addEventListener('click', () => {
-        seleccionarPaisDesdeLista(item.dataset.nombre, item.dataset.tipo);
-      });
-    });
-
-    indiceActivo = -1;
-  }
-
-  function pintarLista(filtro = '') {
-    if (!filtro.trim()) {
-      listaEl.innerHTML = '';
-      return;
-    }
-    const filtroNorm = normalizarTexto(filtro);
-    const paisesFiltrados = todosLosPaises.filter(p =>
-      normalizarTexto(p.nombre).includes(filtroNorm)
-    );
-    renderItems(paisesFiltrados);
-  }
-
-  // 👉 NUEVO: al hacer foco con el campo vacío, muestra todos los países
-  function mostrarTodos() {
-    renderItems(todosLosPaises);
-  }
-
-  function actualizarActivo(items) {
-    items.forEach((item, i) => item.classList.toggle('activo', i === indiceActivo));
-    if (items[indiceActivo]) {
-      items[indiceActivo].scrollIntoView({ block: 'nearest' });
-    }
-  }
-
-  pintarLista(); // arranca vacía
-
-  if (inputBuscar) {
-    inputBuscar.addEventListener('input', (e) => {
-      pintarLista(e.target.value);
-      if (wrapper) wrapper.classList.toggle('tiene-texto', e.target.value.trim().length > 0);
-    });
-
-    // 👉 NUEVO: mostrar todos al hacer foco si está vacío
-    inputBuscar.addEventListener('focus', () => {
-      if (!inputBuscar.value.trim()) {
-        mostrarTodos();
-      }
-    });
-
-    // 👉 NUEVO: navegación con teclado, reusando seleccionarPaisDesdeLista
-    inputBuscar.addEventListener('keydown', (e) => {
-      const items = listaEl.querySelectorAll('.lista-paises__item');
-      if (!items.length) return;
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        indiceActivo = (indiceActivo + 1) % items.length;
-        actualizarActivo(items);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        indiceActivo = (indiceActivo - 1 + items.length) % items.length;
-        actualizarActivo(items);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (indiceActivo >= 0 && items[indiceActivo]) {
-          const item = items[indiceActivo];
-          seleccionarPaisDesdeLista(item.dataset.nombre, item.dataset.tipo);
-        }
-      } else if (e.key === 'Escape') {
-        listaEl.innerHTML = '';
-        indiceActivo = -1;
-      }
-    });
-  }
-
-  if (btnLimpiar) {
-    btnLimpiar.addEventListener('click', limpiarBusqueda);
-  }
+  renderOpcionesPaises();
 }
 
-function seleccionarPaisDesdeLista(nombre, tipo) {
-  const inputBuscar = document.getElementById('buscar-pais');
+function renderOpcionesPaises() {
   const listaEl = document.getElementById('lista-paises');
-  const wrapper = document.querySelector('.panel-paises__buscar-wrapper');
+  if (!listaEl) return;
+  listaEl.innerHTML = (window.__todosLosPaises || []).map(p => `
+    <li class="lista-paises__item" data-nombre="${p.nombre}" data-tipo="${p.tipo}">
+      ${p.nombre}
+    </li>
+  `).join('');
+}
 
-  if (inputBuscar) inputBuscar.value = nombre;
-  if (listaEl) listaEl.innerHTML = '';               // 👈 oculta el listado
-  if (wrapper) wrapper.classList.add('tiene-texto');  // 👈 mantiene visible la "X"
+// 👉 UN SOLO listener en document, funciona pase lo que pase con el DOM
+document.addEventListener('click', (e) => {
+  const btnSelect = document.getElementById('btn-select-pais');
+  const listaEl = document.getElementById('lista-paises');
+  const textoSelect = document.getElementById('texto-select-pais');
+  if (!btnSelect || !listaEl) return;
 
+  // clic en el botón del select → abrir/cerrar
+  if (e.target.closest('#btn-select-pais')) {
+    e.stopPropagation();
+    if (listaEl.classList.contains('lista-paises--oculta')) {
+      renderOpcionesPaises(); // 👈 por si acaso se perdió el contenido
+    }
+    listaEl.classList.toggle('lista-paises--oculta');
+    return;
+  }
+
+  // clic en un país de la lista
+  const item = e.target.closest('.lista-paises__item');
+  if (item && listaEl.contains(item)) {
+    if (textoSelect) textoSelect.textContent = item.dataset.nombre;
+    listaEl.classList.add('lista-paises--oculta');
+    seleccionarPaisDesdeLista(item.dataset.nombre, item.dataset.tipo);
+    return;
+  }
+
+  // clic afuera → cerrar
+  if (!listaEl.contains(e.target)) {
+    listaEl.classList.add('lista-paises--oculta');
+  }
+});
+
+function seleccionarPaisDesdeLista(nombre, tipo) {
   if (tipo === 'caribe') {
     cerrarPopoverCaribe();
     svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
@@ -346,7 +364,7 @@ function seleccionarPaisDesdeLista(nombre, tipo) {
 
     zoomACaribe(() => {
       const { x, y } = posicionPopoverDesdeEtiqueta();
-      abrirPopoverCaribe(x, y, nombre);
+      //abrirPopoverCaribe(x, y, nombre);
     });
   } else {
     cerrarPopoverCaribe();
@@ -371,16 +389,23 @@ function limpiarBusqueda() {
   const inputBuscar = document.getElementById('buscar-pais');
   const listaEl = document.getElementById('lista-paises');
   const wrapper = document.querySelector('.panel-paises__buscar-wrapper');
+  const textoSelect = document.getElementById('texto-select-pais');
 
   if (inputBuscar) inputBuscar.value = '';
-  if (listaEl) listaEl.innerHTML = '';
+  if (listaEl) {
+    listaEl.innerHTML = '';
+    listaEl.classList.add('lista-paises--oculta');
+  }
   if (wrapper) wrapper.classList.remove('tiene-texto');
+  if (textoSelect) textoSelect.textContent = 'Selecciona un país';
 
   cerrarPopoverCaribe();
   resetZoomMapa();
   svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
 }
 
-cargarMapa();
 
+
+
+cargarMapa();
 

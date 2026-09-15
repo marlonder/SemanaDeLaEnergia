@@ -45,11 +45,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ---------- Datos para pintar la página ----------
 $proyectoEditar = isset($_GET['editar']) ? $controller->obtener((int)$_GET['editar']) : null;
 
-$proyectos = $controller->listar();
+//$proyectos = $controller->listar();
 $paises = $controller->listarPaises();
 $categorias = $controller->listarCategorias();
 $subcategorias = $controller->listarSubCategorias();
 $tiposEntidad = $controller->listarTiposEntidad();
+
+
+//busqueda
+$busqueda = trim($_GET['q'] ?? '');
+$pagina = max(1, (int)($_GET['pagina'] ?? 1));
+$porPagina = 10;
+
+$resultadoListado = $controller->listar($busqueda, $pagina, $porPagina);
+$proyectos = $resultadoListado['proyectos'];
+$totalPaginas = $resultadoListado['totalPaginas'];
+$paginaActual = $resultadoListado['paginaActual'];
+
 
 $msg = $_GET['msg'] ?? null;
 $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
@@ -73,6 +85,8 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
     .sidebar-logo {
         font-size: 15px; font-weight: bold; color: #fff;
         padding: 0 20px 20px; border-bottom: 1px solid #35424f; margin-bottom: 10px;
+        text-align: center;
+        padding: 20px 15px;
     }
     .sidebar-nav { display: flex; flex-direction: column; }
     .sidebar-nav a {
@@ -82,6 +96,19 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
     .sidebar-nav a:hover { background: #2a3a48; color: #fff; }
     .sidebar-nav a.activo {
         background: #2a3a48; color: #fff; border-left: 3px solid #1565c0; font-weight: bold;
+    }
+
+     .sidebar-logo__img {
+        display: block;
+        width: 100px;
+        height: auto;
+        margin: 0 auto 12px;
+    }
+
+    .sidebar-logo__texto {
+        font-size: 16px;
+        font-weight: bold;
+        line-height: 1.3;
     }
     .contenido { flex: 1; padding: 30px; }
 
@@ -193,6 +220,24 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
     .red-opcion img { width: 18px; height: 18px; }
     .red-opcion:hover { background: #f2f2f2; }
     .red-opcion.disabled { opacity: .4; pointer-events: none; }
+
+    /* Vista previa de imagen / QR */
+    .preview-wrap {
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+    }
+    .preview-wrap img {
+        height: 60px;
+        max-width: 100px;
+        object-fit: contain;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fafafa;
+        padding: 2px;
+    }
 </style>
 </head>
 <body>
@@ -242,13 +287,13 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
                     <div>
                         <label>Código QR (imagen)</label>
                         <input type="file" name="qr" id="inputQr" accept="image/png, image/jpeg, image/webp, image/gif">
-                        <?php if (!empty($proyectoEditar['link'])): ?>
-                            <p style="font-size:12px;margin-top:4px;">
-                                Actual:
-                                <img src="media/qr/<?= htmlspecialchars($proyectoEditar['link']) ?>"
-                                    alt="" style="height:40px;vertical-align:middle;">
-                            </p>
-                        <?php endif; ?>
+                        <?php
+                            $qrActual = !empty($proyectoEditar['link']) ? '../../media/qr/' . htmlspecialchars($proyectoEditar['link']) : '';
+                        ?>
+                        <div class="preview-wrap" id="previewWrapQr" style="<?= $qrActual ? '' : 'display:none;' ?>">
+                            <span id="labelPreviewQr"><?= $qrActual ? 'Actual:' : '' ?></span>
+                            <img id="previewQr" src="<?= $qrActual ?>" data-original="<?= $qrActual ?>" alt="">
+                        </div>
                     </div>
 
                    <div class="redes-sociales-wrapper">
@@ -282,15 +327,15 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
 
 
                     <div>
-                        <label>Imagen</label>
+                        <label>Imagen del Proyecto</label>
                         <input type="file" name="imagen" id="inputImagen" accept="image/png, image/jpeg, image/webp, image/gif">
-                        <?php if (!empty($proyectoEditar['imagen_path'])): ?>
-                            <p style="font-size:12px;margin-top:4px;">
-                                Actual:
-                                <img src="media/<?= htmlspecialchars($proyectoEditar['imagen_path']) ?>"
-                                    alt="" style="height:40px;vertical-align:middle;">
-                            </p>
-                        <?php endif; ?>
+                        <?php
+                            $imagenActual = !empty($proyectoEditar['imagen_path']) ? '../../media/proyecto/' . htmlspecialchars($proyectoEditar['imagen_path']) : '';
+                        ?>
+                        <div class="preview-wrap" id="previewWrapImagen" style="<?= $imagenActual ? '' : 'display:none;' ?>">
+                            <span id="labelPreviewImagen"><?= $imagenActual ? 'Actual:' : '' ?></span>
+                            <img id="previewImagen" src="<?= $imagenActual ?>" data-original="<?= $imagenActual ?>" alt="">
+                        </div>
                     </div>
 
                     <div>
@@ -371,9 +416,22 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
             </form>
         </div>
 
+        
+
         <!-- ================= LISTADO ================= -->
         <div class="panel">
             <h2>Listado de proyectos</h2>
+
+            <form method="GET" action="Listar_proyectos.php" style="margin-bottom:14px; display:flex; gap:8px;">
+                <input type="text" name="q" placeholder="Buscar por nombre del proyecto..."
+                    value="<?= htmlspecialchars($busqueda) ?>"
+                    style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                <button type="submit" class="btn btn-editar">Buscar</button>
+                <?php if ($busqueda !== ''): ?>
+                    <a href="Listar_proyectos.php" class="btn btn-cancelar">Limpiar</a>
+                <?php endif; ?>
+            </form>
+
             <table>
                 <thead>
                     <tr>
@@ -417,6 +475,18 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
                     <?php endif; ?>
                 </tbody>
             </table>
+            <?php if ($totalPaginas > 1): ?>
+                <div style="display:flex; justify-content:center; gap:6px; margin-top:14px;">
+                    <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                        <a href="Listar_proyectos.php?pagina=<?= $i ?><?= $busqueda !== '' ? '&q=' . urlencode($busqueda) : '' ?>"
+                        style="padding:6px 12px; border-radius:4px; text-decoration:none;
+                                background: <?= $i === $paginaActual ? '#1565c0' : '#eee' ?>;
+                                color: <?= $i === $paginaActual ? '#fff' : '#333' ?>;">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </main>
 </div>
@@ -452,23 +522,59 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
         filtrar();
     })();
 
-    // Validación extra de imagen en el navegador (una sola, formato correcto)
-    document.getElementById('inputImagen').addEventListener('change', function () {
+    // ---------- Vista previa de imagen / QR ----------
+    // Importante: esto SOLO cambia lo que se ve en el navegador (una URL temporal
+    // "blob:" generada en memoria local). No sube, no borra ni reemplaza nada en
+    // el servidor. El archivo que ya está guardado en el servidor permanece
+    // intacto hasta que el formulario se envía (submit) y el controller procesa
+    // el reemplazo.
+    function configurarPreview(inputId, wrapId, imgId, labelId) {
+        var input = document.getElementById(inputId);
+        var wrap = document.getElementById(wrapId);
+        var img = document.getElementById(imgId);
+        var label = document.getElementById(labelId);
         var permitido = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (this.files.length > 0 && permitido.indexOf(this.files[0].type) === -1) {
-            alert('Formato no permitido. Solo imágenes JPG, PNG, WEBP o GIF.');
-            this.value = '';
-        }
-    });
+        var blobUrlActivo = null;
 
-    document.getElementById('inputQr').addEventListener('change', function () {
-        var permitido = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (this.files.length > 0 && permitido.indexOf(this.files[0].type) === -1) {
-            alert('Formato no permitido. Solo imágenes JPG, PNG, WEBP o GIF.');
-            this.value = '';
-        }
-    });
-    
+        input.addEventListener('change', function () {
+            // Si había una vista previa local anterior, liberamos memoria
+            if (blobUrlActivo) {
+                URL.revokeObjectURL(blobUrlActivo);
+                blobUrlActivo = null;
+            }
+
+            if (this.files.length === 0) {
+                // No hay archivo nuevo seleccionado -> volver a mostrar la imagen
+                // original del servidor (si existía), sin tocarla.
+                var original = img.dataset.original;
+                if (original) {
+                    img.src = original;
+                    label.textContent = 'Actual:';
+                    wrap.style.display = 'flex';
+                } else {
+                    wrap.style.display = 'none';
+                }
+                return;
+            }
+
+            var file = this.files[0];
+            if (permitido.indexOf(file.type) === -1) {
+                alert('Formato no permitido. Solo imágenes JPG, PNG, WEBP o GIF.');
+                this.value = '';
+                return;
+            }
+
+            // Vista previa local (aún no guardada en el servidor)
+            blobUrlActivo = URL.createObjectURL(file);
+            img.src = blobUrlActivo;
+            label.textContent = 'Nueva (sin guardar aún):';
+            wrap.style.display = 'flex';
+        });
+    }
+
+    configurarPreview('inputImagen', 'previewWrapImagen', 'previewImagen', 'labelPreviewImagen');
+    configurarPreview('inputQr', 'previewWrapQr', 'previewQr', 'labelPreviewQr');
+
     //Red social 
     (function () {
         const REDES = {

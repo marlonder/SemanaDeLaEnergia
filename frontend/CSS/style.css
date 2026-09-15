@@ -1,3 +1,9 @@
+* ,
+*::before,
+*::after {
+  box-sizing: border-box; /* evita que paddings/bordes fijos desborden el ancho en pantallas chicas */
+}
+
 body {
   font-family: sans-serif;
   text-align: center;
@@ -12,14 +18,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   max-width: 1050px;
   margin: 0 auto;
-  padding: 5rem 19rem;
+  /* antes: padding: 5rem 19rem;  -> 19rem fijos rompían el layout en mobile (podía dejar ancho negativo) */
+  padding: 5% 8%;
   flex: 1;
 }
 
 #contenedor-mapa {
-  width: 1200px;
+  width: 100%;
   max-width: 1050px;
 }
 #contenedor-mapa svg {
@@ -98,9 +106,10 @@ body {
   visibility: visible;
 }
 
-.modal-container,     
+.modal-container,
 .modal__caja {
-  max-width: 720px;   
+  width: 92%;
+  max-width: 720px;
   max-height: 80vh;
 }
 
@@ -145,8 +154,8 @@ body {
 }
 
 .modal-overlay .panel-info {
-  width: 90%;
-  max-width: 820px;   
+  width: 92%;
+  max-width: 820px;
   max-height: 85vh;
 }
 
@@ -197,7 +206,9 @@ body {
   position: absolute;
   top: -5px;
   right: 12px;
-  width: 220px;
+  width: 45%;
+  max-width: 220px;
+  min-width: 150px;
   max-height: 70vh;
   overflow-y: auto;
   background: #fff;
@@ -207,19 +218,33 @@ body {
   z-index: 5;
 }
 
-.panel-paises__input {
+
+
+.panel-paises__select-wrapper {
+  position: relative;
+}
+
+.panel-paises__select-btn {
   width: 100%;
   box-sizing: border-box;
   padding: 6px 8px;
-  margin-bottom: 0px;
   border: 1px solid #ccc;
   border-radius: 6px;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .lista-paises {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+.lista-paises--oculta {
+  display: none;
 }
 
 .lista-paises__item {
@@ -232,6 +257,7 @@ body {
 .lista-paises__item:hover {
   background: #f0f0f0;
 }
+
 
 /* ============================================================
    RESPONSIVE — Tablets (incluye iPad Pro 13"/12.9": 1024–1366px)
@@ -253,10 +279,58 @@ body {
 
 }
 
+/* ============================================================
+   RESPONSIVE — Móviles (todo lo que sea menor a 768px)
+   ============================================================ */
+@media (max-width: 767px) {
+  .layout {
+    padding: 6% 4%;
+  }
+  #contenedor-mapa {
+    width: 100%;
+    max-width: 100%;
+  }
+  .panel-paises {
+    width: 60%;
+    max-width: 220px;
+    right: 6px;
+  }
+  .modal-proyectos__layout {
+    flex-direction: column;
+    align-items: center;
+  }
+  .modal-proyectos__logo {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 160px;
+    padding-right: 0;
+    padding-bottom: 16px;
+    border-right: none;
+    border-bottom: 2px solid #2e9e5b;
+  }
+  .detalle-proyecto__org-qr-row {
+    flex-direction: column;
+    align-items: center;
+  }
+  .detalle-proyecto__organizacion-wrap {
+    text-align: center;
+    width: 100%;
+  }
+  .detalle-proyecto__redes {
+    align-items: center;
+  }
+}
+
 /* Móviles pequeños */
 @media (max-width: 480px) {
   .panel-info {
     max-width: 100%;
+  }
+  .layout {
+    padding: 6% 3%;
+  }
+  .panel-paises {
+    width: 70%;
   }
 }
 
@@ -313,65 +387,7 @@ body {
 }
 
 
-/* ============================================================
-   POPOVER DEL CARIBE
-   ============================================================ */
-.popover-caribe {
-  position: absolute;
-  width: 340px;
-  max-width: 90vw;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
-  padding: 0.75rem;
-  z-index: 50;
-  opacity: 0;
-  visibility: hidden;
-  transform: scale(0.95);
-  transform-origin: left center;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  pointer-events: none;
-}
-.popover-caribe.activo {
-  opacity: 1;
-  visibility: visible;
-  transform: scale(1);
-  pointer-events: auto;
-}
 
-.popover-caribe__flecha {
-  position: absolute;
-  left: -8px;
-  top: 23px;
-  width: 14px;
-  height: 14px;
-  background: #fff;
-  transform: rotate(45deg);
-  box-shadow: -2px 2px 4px rgba(0,0,0,0.05);
-}
-
-.popover-caribe__cerrar {
-  position: absolute;
-  top: 4px;
-  right: 8px;
-  background: none;
-  border: none;
-  font-size: 1.3rem;
-  line-height: 1;
-  color: #999;
-  cursor: pointer;
-}
-.popover-caribe__cerrar:hover {
-  color: #333;
-}
-
-.popover-caribe__titulo {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--sde-navy-dark, #0a1c33);
-  text-align: center;
-}
 
 .popover-caribe__mapa {
   width: 100%;
@@ -418,14 +434,10 @@ body {
 }
 
 /* Tablets: popover un poco más grande */
-@media (min-width: 768px) and (max-width: 1366px) {
-  .popover-caribe {
-    width: 400px;
-  }
-}
+
 
 /* Móvil: si no cabe al lado, que se centre arriba del punto en vez de a un lado */
-@media (max-width: 480px) {
+/*@media (max-width: 480px) {
   .popover-caribe {
     left: 5% !important;
     right: 5%;
@@ -434,7 +446,7 @@ body {
   .popover-caribe__flecha {
     display: none;
   }
-}
+}*/
 
 
 /* Estrella sobre Ecuador */
@@ -452,15 +464,37 @@ body {
 
 /* Lista de proyectos dentro del modal */
 .lista-proyectos {
-  flex: 1;        
-  min-width: 0;       
+  flex: 1;
+  min-width: 0;
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 60vh;
+
+  max-height: 180px;
   overflow-y: auto;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
 }
 
+/* Chrome, Edge, Safari */
+.lista-proyectos::-webkit-scrollbar {
+  width: 5px;
+}
+
+.lista-proyectos::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lista-proyectos::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+}
+
+.lista-proyectos::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.45);
+}
 
 .lista-proyectos__item {
   display: flex;
@@ -478,10 +512,18 @@ body {
 }
 .lista-proyectos__nombre {
   font-weight: 500;
-  white-space: normal;   /* 👈 esto arregla el texto partido palabra por palabra */
+  white-space: normal;
   word-break: normal;
+  text-align: justify;
   overflow-wrap: break-word;
   line-height: 1.3;
+}
+
+.lista-proyectos__meta {
+  display: block;
+  font-size: 0.85em;
+  color: #444968;
+  text-align: left;
 }
 .lista-proyectos__categoria {
   font-size: 0.85em;
@@ -571,7 +613,7 @@ body {
     align-self: flex-start;
     margin-top: 55px;
     background: #1e3a5f;
-    border: 33px;
+    border: none;
     border-radius: 15px;
     color: #fff;
     font-weight: 600;
@@ -589,7 +631,7 @@ body {
   }
   .detalle-proyecto__imagen-wrap {
     border-right: none;
-    border-right: 2px solid #2e9e5b;
+    border-bottom: 2px solid #2e9e5b;
     padding-right: 0;
     padding-bottom: 16px;
     flex: none;
@@ -616,9 +658,9 @@ body {
 
 .detalle-proyecto__redes {
     display: flex;
-    flex-direction: column;   
+    flex-direction: column;
     align-items: flex-start;
-    gap: 6px;                 
+    gap: 6px;
     flex-wrap: nowrap;
 }
 .detalle-proyecto__red-item {
@@ -645,6 +687,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .detalle-proyecto__organizacion-wrap {
@@ -674,4 +717,130 @@ body {
 .detalle-proyecto__qr-loading {
   font-size: 11px;
   color: #6b7280;
+}
+
+
+/*filtros */
+.filtros-categoria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.filtro-categoria__btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid #2ecc71;
+  background: #fff;
+  color: #1e8449;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.filtro-categoria__btn:hover {
+  background: #e9f9f0;
+}
+
+.filtro-categoria__btn.activo {
+  background: #2ecc71;
+  border-color: #1e8449;
+  color: #fff;
+}
+
+
+/* modal detalle para movil*/
+/* ============================================================
+   REDISEÑO MOBILE — Modal detalle de proyecto (va al FINAL del archivo)
+   ============================================================ */
+@media (max-width: 767px) {
+
+  /* Arregla el recorte por el centrado con overflow */
+  .panel-info__contenido {
+    align-items: flex-start;
+    padding: 1.1rem 1rem 1.5rem;
+  }
+
+  /* Imagen arriba, contenido abajo — de verdad esta vez */
+  .detalle-proyecto {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .detalle-proyecto__imagen-wrap {
+    width: 100%;
+    border-right: none;
+    border-bottom: none;
+    padding: 0;
+  }
+
+  .detalle-proyecto__foto {
+    width: 100%;
+    max-height: 160px;
+    border-radius: 10px;
+  }
+
+  /* Título más compacto */
+  .panel-info__titulo {
+    font-size: 1.05rem;
+    line-height: 1.35;
+    padding: 0.85rem 2.2rem 0.85rem 1rem;
+  }
+
+  /* Badges: tamaño y espacio prolijo */
+  .detalle-proyecto__badges {
+    margin-top: 2px;
+    gap: 6px;
+  }
+  .detalle-proyecto__categoria,
+  .detalle-proyecto__subcategoria {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+  }
+
+  /* Descripción: quita el justificado que causaba los espacios raros */
+  .detalle-proyecto__descripcion {
+    text-align: left;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    margin: 4px 0;
+  }
+
+  /* Organización + QR alineados en fila, más compactos */
+  .detalle-proyecto__org-qr-row {
+    align-items: center;
+    margin-top: 4px;
+  }
+  .detalle-proyecto__organizacion-wrap {
+    text-align: left;
+  }
+  .detalle-proyecto__redes {
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .detalle-proyecto__qr-wrap {
+    width: 72px;
+    height: 72px;
+  }
+
+  /* Botón Regresar: sin el hueco enorme, centrado y liviano */
+  .btn-regresar {
+    margin-top: 14px;
+    align-self: center;
+  }
+
+  /* Logo olacde: separado con una línea arriba, no pegado */
+  .modal-proyectos__logo {
+    margin-top: 14px;
+    padding-top: 14px;
+    padding-bottom: 0;
+    border-top: 2px solid #2e9e5b;
+    border-bottom: none;
+  }
+  .modal-proyectos__logo img {
+    max-width: 85px;
+    margin: 0 auto;
+  }
 }

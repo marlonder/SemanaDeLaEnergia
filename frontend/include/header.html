@@ -27,7 +27,7 @@
      
       
         <img
-          src="http://192.168.1.205:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png"
+          src="https://premioalaexcelenciaenergetica.olacde.org/administracion/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png"
           alt="Proyectos a la Excelencia"
           class="sde-header__logo sde-header__logo--main"
         >
@@ -37,11 +37,13 @@
     <!-- Buscador y refrescar del mapa -->
     <div class="sde-header__mapa-controles">
       <div id="panel-paises" class="panel-paises">
-        <div class="panel-paises__buscar-wrapper">
-          <input type="text" id="buscar-pais" class="panel-paises__input" placeholder="Buscar país...">
-          <button id="btn-limpiar-busqueda" class="btn-limpiar-busqueda" type="button" title="Limpiar">&times;</button>
+        <div class="panel-paises__select-wrapper">
+          <button type="button" id="btn-select-pais" class="panel-paises__select-btn">
+            <span id="texto-select-pais">Seleccionar país...</span>
+            <span class="panel-paises__flecha">▾</span>
+          </button>
+          <ul id="lista-paises" class="lista-paises lista-paises--oculta"></ul>
         </div>
-        <ul id="lista-paises" class="lista-paises"></ul>
       </div>
 
       <button id="btn-refrescar" class="btn-refrescar" title="Refrescar mapa">

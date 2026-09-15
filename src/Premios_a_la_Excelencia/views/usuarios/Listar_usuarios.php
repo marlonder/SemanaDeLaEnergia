@@ -55,6 +55,8 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
     .sidebar-logo {
         font-size: 15px; font-weight: bold; color: #fff;
         padding: 0 20px 20px; border-bottom: 1px solid #35424f; margin-bottom: 10px;
+        text-align: center;
+        padding: 20px 15px;
     }
     .sidebar-nav { display: flex; flex-direction: column; }
     .sidebar-nav a {
@@ -65,6 +67,20 @@ $ok = isset($_GET['ok']) ? (bool)$_GET['ok'] : null;
     .sidebar-nav a.activo {
         background: #2a3a48; color: #fff; border-left: 3px solid #1565c0; font-weight: bold;
     }
+
+    .sidebar-logo__img {
+        display: block;
+        width: 100px;
+        height: auto;
+        margin: 0 auto 12px;
+    }
+
+    .sidebar-logo__texto {
+        font-size: 16px;
+        font-weight: bold;
+        line-height: 1.3;
+    }
+    
     .contenido { flex: 1; padding: 30px; }
 
     .cabecera { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }

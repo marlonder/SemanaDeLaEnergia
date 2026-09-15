@@ -31,25 +31,57 @@ class Proyecto
     }
 
     // Listado con nombres legibles (para la tabla)
-    public function listar()
+   public function listar($busqueda = '', $pagina = 1, $porPagina = 10)
     {
+        $pagina = max(1, (int)$pagina);
+        $offset = ($pagina - 1) * $porPagina;
+
+        $where = '';
+        $params = [];
+
+        if (trim($busqueda) !== '') {
+            $where = 'WHERE p.titulo LIKE :busqueda';
+            $params[':busqueda'] = '%' . trim($busqueda) . '%';
+        }
+
+        // Total de resultados (para calcular el número de páginas)
+        $sqlTotal = "SELECT COUNT(*) FROM {$this->tabla} p $where";
+        $stmtTotal = $this->conn->prepare($sqlTotal);
+        $stmtTotal->execute($params);
+        $total = (int)$stmtTotal->fetchColumn();
+
+        // Resultados de la página actual
         $sql = "SELECT p.id, p.titulo, p.organizacion, p.anio, p.estado,
-               pa.nombre AS pais_nombre,
-               c.nombre AS categoria_nombre,
-               te.nombre AS tipo_entidad_nombre,
-               sc.nombre AS subcategoria_nombre,
-               u.nombres AS usuario_nombres
-        FROM {$this->tabla} p
-        INNER JOIN pais pa ON pa.id = p.id_pais
-        INNER JOIN categoria c ON c.id = p.id_categoria
-        INNER JOIN Tipo_entidad te ON te.id = p.id_Tipo_E
-        INNER JOIN sub_categoria sc ON sc.id = p.id_subcategoria
-        INNER JOIN usuario u ON u.id = p.id_usuario
-        ORDER BY p.id DESC";
+                pa.nombre AS pais_nombre,
+                c.nombre AS categoria_nombre,
+                te.nombre AS tipo_entidad_nombre,
+                sc.nombre AS subcategoria_nombre,
+                u.nombres AS usuario_nombres
+            FROM {$this->tabla} p
+            INNER JOIN pais pa ON pa.id = p.id_pais
+            INNER JOIN categoria c ON c.id = p.id_categoria
+            INNER JOIN Tipo_entidad te ON te.id = p.id_Tipo_E
+            INNER JOIN sub_categoria sc ON sc.id = p.id_subcategoria
+            INNER JOIN usuario u ON u.id = p.id_usuario
+            $where
+            ORDER BY p.id DESC
+            LIMIT :limite OFFSET :offset";
 
         $stmt = $this->conn->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->bindValue(':limite', $porPagina, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'proyectos'    => $proyectos,
+            'total'        => $total,
+            'paginaActual' => $pagina,
+            'totalPaginas' => max(1, (int)ceil($total / $porPagina)),
+        ];
     }
 
     // Detalle completo (para precargar el formulario de edición)
@@ -173,4 +205,19 @@ class Proyecto
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+
+    public function listarPaisesConProyectos()
+{
+    $sql = "SELECT DISTINCT pa.nombre AS pais
+            FROM {$this->tabla} p
+            INNER JOIN pais pa ON pa.id = p.id_pais
+            WHERE p.estado = 1";
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    $filas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return array_map(fn($f) => $f['pais'], $filas);
+}
 }

@@ -10,7 +10,16 @@
 $paginaActiva = $paginaActiva ?? '';
 ?>
 <aside class="sidebar">
-    <div class="sidebar-logo">Premios a la Excelencia</div>
+    <div class="sidebar-logo">
+        <img 
+            src="../../media/Olade_Logo.png" 
+            alt="Logo de la empresa"
+            class="sidebar-logo__img"
+        >
+        <div class="sidebar-logo__texto">
+            Premios a la Excelencia
+        </div>
+    </div>
 
     <nav class="sidebar-nav">
         <a href="<?= $paginaActiva === 'usuarios' ? '#' : '../usuarios/Listar_usuarios.php' ?>"

@@ -69,10 +69,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         background: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a;
         padding: 10px 14px; border-radius: 5px; margin-bottom: 10px; font-size: 13px;
     }
+
+        .logo-empresa {
+        display: block;
+        width: 140px;
+        height: auto;
+        margin: 0 auto 18px auto;
+    }
 </style>
 </head>
 <body>
 <div class="contenedor">
+    <img 
+        src="Premios_a_la_Excelencia/media/Logo.png" 
+        alt="Logo de la empresa" 
+        class="logo-empresa"
+    >
     <h1>Premios a la Excelencia</h1>
     <p class="subtitulo">Ingresa tus credenciales para continuar</p>
 
