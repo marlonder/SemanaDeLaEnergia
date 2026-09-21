@@ -37,39 +37,56 @@ function marcarPaisesConProyectos(nombres) {
 
   const capa = grupoMapa.append('g').attr('class', 'capa-marcadores-proyecto');
 
-  const ESCALA_PIN = 0.4; // 👈 ajusta este número para hacerlo más grande/chico
+  const ESCALA_PIN = 0.4;
+
+  // Desplazamientos [dx, dy] en píxeles del mapa, respecto al centroide.
+  // dx negativo = izquierda (oeste), dx positivo = derecha (este)
+  // dy negativo = arriba (norte),   dy positivo = abajo (sur)
+  const AJUSTES_PX = {
+    'Chile': [-6, 6],
+    // 'Panamá': [0, -2],
+  };
 
   nombres.forEach(nombre => {
-    const centro = obtenerCentroidePorNombre(nombre);
-    if (!centro) {
-      console.warn(`No se pudo ubicar "${nombre}" para el marcador.`);
-      return;
+    try {
+      const centro = obtenerCentroidePorNombre(nombre);
+      if (!centro) {
+        console.warn(`No se pudo ubicar "${nombre}" para el marcador.`);
+        return;
+      }
+
+      const [dx, dy] = AJUSTES_PX[nombre] || [0, 0];
+      const x = centro[0] + dx;
+      const y = centro[1] + dy;
+
+      const grupoPin = capa.append('g')
+        .attr('class', 'marcador-proyecto-grupo')
+        // translate(0,-14) hace que la PUNTA del pin quede en (x, y)
+        .attr('transform', `translate(${x}, ${y}) scale(${ESCALA_PIN}) translate(0, -14)`)
+        .style('cursor', 'pointer')
+        .on('click', function (evento) {
+          evento.stopPropagation();
+          abrirModal(nombre);
+        });
+
+      grupoPin.append('path')
+        .attr('class', 'marcador-proyecto')
+        .attr('data-name', nombre)
+        .attr('d', 'M0,-14 C-7,-14 -12,-9 -12,-2 C-12,7 0,14 0,14 C0,14 12,7 12,-2 C12,-9 7,-14 0,-14 Z')
+        .style('fill', '#2ecc71')
+        .style('stroke', '#1e8449')
+        .style('stroke-width', 1);
+
+      grupoPin.append('circle')
+        .attr('cx', 0)
+        .attr('cy', -5)
+        .attr('r', 4)
+        .style('fill', 'white')
+        .style('pointer-events', 'none');
+
+    } catch (err) {
+      console.error(`Error dibujando el marcador de "${nombre}":`, err);
     }
-    const [x, y] = centro;
-
-    const grupoPin = capa.append('g')
-      .attr('class', 'marcador-proyecto-grupo')
-      .attr('transform', `translate(${x}, ${y}) scale(${ESCALA_PIN})`)
-      .style('cursor', 'pointer')
-      .on('click', function (evento) {
-        evento.stopPropagation();
-        abrirModal(nombre);
-      });
-
-    grupoPin.append('path')
-      .attr('class', 'marcador-proyecto')
-      .attr('data-name', nombre)
-      .attr('d', 'M0,-14 C-7,-14 -12,-9 -12,-2 C-12,7 0,14 0,14 C0,14 12,7 12,-2 C12,-9 7,-14 0,-14 Z')
-      .style('fill', '#2ecc71')
-      .style('stroke', '#1e8449')
-      .style('stroke-width', 1);
-
-    grupoPin.append('circle')
-      .attr('cx', 0)
-      .attr('cy', -5)
-      .attr('r', 4)
-      .style('fill', 'white')
-      .style('pointer-events', 'none');
   });
 }
 

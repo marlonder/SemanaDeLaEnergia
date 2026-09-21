@@ -15,13 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // =====================================================
 // URLs públicas base donde se sirven imágenes y QR de proyectos
 // =====================================================
-<<<<<<< HEAD
+
 const URL_BASE_IMAGENES = 'https://premioalaexcelenciaenergetica.olacde.org/administracion/Premios_a_la_Excelencia/media/proyecto/';
 const URL_BASE_QR       = 'https://premioalaexcelenciaenergetica.olacde.org/administracion/Premios_a_la_Excelencia/media/qr/';
-=======
-const URL_BASE_IMAGENES = 'http://192.168.18.22:8080/Premios_a_la_Excelencia/media/proyecto/';
-const URL_BASE_QR       = 'http://192.168.18.22:8080/Premios_a_la_Excelencia/media/qr/';
->>>>>>> 0a9836e29114e433bff52b036b45373cdcc3f54c
+
 
 $nombrePais = trim($_GET['pais'] ?? '');
 

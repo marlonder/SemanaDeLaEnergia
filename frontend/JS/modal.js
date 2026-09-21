@@ -23,12 +23,10 @@ modalOverlay.addEventListener('click', (e) => {
 // =====================================================
 
 
-<<<<<<< HEAD
+
 const API_BASE_URL = 'https://premioalaexcelenciaenergetica.olacde.org/administracion/Premios_a_la_Excelencia'; 
-=======
-const API_BASE_URL = 'http://192.168.18.22:8080/Premios_a_la_Excelencia'; 
->>>>>>> 0a9836e29114e433bff52b036b45373cdcc3f54c
-// 👉 abre el modal ya reutilizado, pero mostrando la LISTA de proyectos
+
+//  abre el modal ya reutilizado, pero mostrando la LISTA de proyectos
 async function abrirModal(nombrePais) {
   paisActualProyectos = nombrePais;
   modalTitulo.textContent = `Proyectos de ${nombrePais}`;
@@ -126,11 +124,9 @@ function renderModalListado() {
   modalContenido.innerHTML = `
     <div class="modal-proyectos__layout">
       <div class="modal-proyectos__logo">
-<<<<<<< HEAD
+
         <img src="https://premioalaexcelenciaenergetica.olacde.org/administracion/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png" alt="Logo Premio Excelencia Energética">
-=======
-        <img src="http://192.168.18.22:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png" alt="Logo Premio Excelencia Energética">
->>>>>>> 0a9836e29114e433bff52b036b45373cdcc3f54c
+
       </div>
       <div class="modal-proyectos__cuerpo">
         ${filtrosHtml}
@@ -160,11 +156,9 @@ function renderModalListado() {
 // Modal de detalles con las redes
 
 const REDES_ICONOS = {
-<<<<<<< HEAD
+
   linkedin:  'https://premioalaexcelenciaenergetica.olacde.org/administracion/Premios_a_la_Excelencia/assets/icon/linkedin.svg',
-=======
-  linkedin:  'http://192.168.18.22:8080/Premios_a_la_Excelencia/assets/icon/linkedin.svg',
->>>>>>> 0a9836e29114e433bff52b036b45373cdcc3f54c
+
   x:         'https://cdn.simpleicons.org/x/000000',
   instagram: 'https://cdn.simpleicons.org/instagram/E4405F',
   facebook:  'https://cdn.simpleicons.org/facebook/1877F2'
@@ -182,11 +176,9 @@ function parseRedesSociales(valor) {
 function mostrarDetalleProyecto(proyecto) {
   modalTitulo.textContent = proyecto.nombre;
 
-<<<<<<< HEAD
+
   const RUTA_IMAGEN_DEFECTO = 'https://premioalaexcelenciaenergetica.olacde.org/administracion/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png';
-=======
-  const RUTA_IMAGEN_DEFECTO = 'http://192.168.18.22:8080/Premios_a_la_Excelencia/media/LogoPremioExcelenciaEnergticaESPColor.png';
->>>>>>> 0a9836e29114e433bff52b036b45373cdcc3f54c
+
   const fotoProyecto = proyecto.foto && proyecto.foto.trim() ? proyecto.foto : RUTA_IMAGEN_DEFECTO;
 
   const subcategoriaHtml = proyecto.subcategoria && proyecto.subcategoria.trim()

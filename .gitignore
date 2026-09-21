@@ -2,4 +2,8 @@
 .env
 
 #DB
-/var/www/html/premios/SemanaDeLaEnergia/src/Premios_a_la_Excelencia/config/db.php
+src/Premios_a_la_Excelencia/config/db.php
+
+#media
+src/Premios_a_la_Excelencia/media/proyecto
+src/Premios_a_la_Excelencia/media/qr

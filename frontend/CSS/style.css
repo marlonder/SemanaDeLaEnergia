@@ -512,11 +512,7 @@ body {
 }
 .lista-proyectos__nombre {
   font-weight: 500;
-<<<<<<< HEAD
   white-space: normal;
-=======
-  white-space: normal;   
->>>>>>> 0a9836e29114e433bff52b036b45373cdcc3f54c
   word-break: normal;
   text-align: justify;
   overflow-wrap: break-word;
@@ -752,7 +748,6 @@ body {
   background: #2ecc71;
   border-color: #1e8449;
   color: #fff;
-<<<<<<< HEAD
 }
 
 
@@ -848,6 +843,4 @@ body {
     max-width: 85px;
     margin: 0 auto;
   }
-=======
->>>>>>> 0a9836e29114e433bff52b036b45373cdcc3f54c
 }
