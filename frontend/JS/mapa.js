@@ -7,6 +7,19 @@ const ALTO = 750;
 const CARIBE_PUNTO = [-75, 19];
 
 
+// Grupos de países que conviene ver zoomeados juntos
+const GRUPOS_ZOOM = {
+  'Centroamérica': ['Guatemala', 'Belice', 'Honduras', 'El Salvador', 'Nicaragua', 'Costa Rica', 'Panamá']
+};
+
+// Islas pequeñas del Caribe que merecen zoom a sí mismas, en vez de zoom a TODO el Caribe
+const PAISES_ZOOM_INDIVIDUAL = ['Curaçao', 'Dominica', 'Barbados'];
+
+function obtenerGrupoDePais(nombre) {
+  return Object.keys(GRUPOS_ZOOM).find(g => GRUPOS_ZOOM[g].includes(nombre)) || null;
+}
+
+
 let svgPrincipal = null;
 let grupoMapa = null;      // 👉 NUEVO: <g> que se transforma con el zoom
 let zoomMapa = null;       // 👉 NUEVO: comportamiento de zoom de d3
@@ -101,6 +114,26 @@ async function cargarPaisesConProyectos() {
   }
 }
 
+
+let paisesListos = false;
+let headerListo = false;
+
+// Por si el header ya estaba insertado antes de que este script corriera
+if (document.getElementById('lista-paises')) {
+  headerListo = true;
+}
+
+document.addEventListener('header:listo', () => {
+  headerListo = true;
+  intentarRenderListaPaises();
+});
+
+function intentarRenderListaPaises() {
+  if (paisesListos && headerListo) {
+    renderOpcionesPaises();
+  }
+}
+
 async function cargarMapa() {
   const [continental, caribe] = await Promise.all([
     d3.json('DATA/america_unida.geo.json'),
@@ -154,6 +187,10 @@ async function cargarMapa() {
       svg.selectAll('.seleccionado').classed('seleccionado', false);
       this.classList.add('seleccionado');
       cerrarPopoverCaribe();
+
+      const grupo = obtenerGrupoDePais(d.properties.name);
+      if (grupo) zoomAPaises(GRUPOS_ZOOM[grupo], 30);
+
       abrirModal(d.properties.name);
     });
 
@@ -177,6 +214,13 @@ async function cargarMapa() {
       svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
       this.classList.add('seleccionado');
       cerrarPopoverCaribe();
+
+      if (PAISES_ZOOM_INDIVIDUAL.includes(d.properties.name)) {
+          zoomAPaises([d.properties.name], 40);
+        } else {
+          zoomACaribe();
+        }
+
       abrirModal(d.properties.name);
     });
 
@@ -220,8 +264,7 @@ function posicionPopoverDesdeEtiqueta() {
 // 👉 NUEVO: zoom del mapa principal hacia la región del Caribe
 // =====================================================
 
-// Calcula, en píxeles del mapa principal, el rectángulo que envuelve
-// a todas las islas del Caribe (polígonos + puntos).
+// Tu función ORIGINAL, sin tocar — la dejas tal cual estaba
 function calcularLimitesCaribe() {
   const puntos = [];
 
@@ -245,6 +288,57 @@ function calcularLimitesCaribe() {
     y1: Math.max(...ys)
   };
 }
+
+// La NUEVA, genérica, para países/grupos individuales
+function calcularLimitesPaises(nombres) {
+  const puntos = [];
+
+  nombres.forEach(nombre => {
+    const featCont = datosContinental.features.find(f => f.properties.name === nombre);
+    if (featCont) {
+      const [[x0, y0], [x1, y1]] = pathMapa.bounds(featCont);
+      puntos.push([x0, y0], [x1, y1]);
+      return;
+    }
+
+    const featCar = datosCaribe.features.find(f => f.properties.name === nombre);
+    if (featCar) {
+      const [[x0, y0], [x1, y1]] = pathMapa.bounds(featCar);
+      puntos.push([x0, y0], [x1, y1]);
+      return;
+    }
+
+    const islaPunto = (window.ISLAS_PUNTO || []).find(i => i.name === nombre);
+    if (islaPunto) {
+      puntos.push(proyeccionMapa(islaPunto.coords));
+      return;
+    }
+
+    console.warn(`⚠️ No se encontró "${nombre}" para calcular el zoom.`);
+  });
+
+  if (puntos.length === 0) return null;
+
+  const xs = puntos.map(p => p[0]);
+  const ys = puntos.map(p => p[1]);
+
+  return {
+    x0: Math.min(...xs),
+    x1: Math.max(...xs),
+    y0: Math.min(...ys),
+    y1: Math.max(...ys)
+  };
+}
+
+function zoomAPaises(nombres, margen = 24, onFin) {
+  const bounds = calcularLimitesPaises(nombres);
+  if (!bounds) {
+    if (onFin) onFin();
+    return;
+  }
+  zoomARectangulo(bounds, margen, onFin);
+}
+
 
 // Anima el zoom del <svg> principal hacia un rectángulo (en píxeles).
 // "onFin" se ejecuta cuando termina la transición (útil para abrir
@@ -320,7 +414,9 @@ function construirListaPaises(continental, caribe) {
     ...nombresCaribePuntos
   ].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
-  renderOpcionesPaises();
+  //renderOpcionesPaises();
+   paisesListos = true;
+   intentarRenderListaPaises();
 }
 
 function renderOpcionesPaises() {
@@ -343,6 +439,7 @@ document.addEventListener('click', (e) => {
   // clic en el botón del select → abrir/cerrar
   if (e.target.closest('#btn-select-pais')) {
     e.stopPropagation();
+    renderOpcionesPaises(); 
     if (listaEl.classList.contains('lista-paises--oculta')) {
       renderOpcionesPaises(); // 👈 por si acaso se perdió el contenido
     }
@@ -379,13 +476,19 @@ function seleccionarPaisDesdeLista(nombre, tipo) {
       seleccionado.classed('seleccionado', true);
     }
 
-    zoomACaribe(() => {
-      const { x, y } = posicionPopoverDesdeEtiqueta();
-      //abrirPopoverCaribe(x, y, nombre);
-    });
+    // 👉 NUEVO: si es una isla pequeña, zoom solo a ella; si no, zoom a todo el Caribe
+    if (PAISES_ZOOM_INDIVIDUAL.includes(nombre)) {
+      zoomAPaises([nombre], 40, () => {
+        const { x, y } = posicionPopoverDesdeEtiqueta();
+      });
+    } else {
+      zoomACaribe(() => {
+        const { x, y } = posicionPopoverDesdeEtiqueta();
+      });
+    }
+
   } else {
     cerrarPopoverCaribe();
-    resetZoomMapa();
     svgPrincipal.selectAll('.seleccionado').classed('seleccionado', false);
 
     const seleccionado = svgPrincipal.selectAll('path')
@@ -397,6 +500,16 @@ function seleccionarPaisDesdeLista(nombre, tipo) {
       seleccionado.classed('seleccionado', true);
     } else {
       console.warn(`No se encontró "${nombre}" en el mapa continental.`);
+    }
+
+    // 👉 NUEVO: si pertenece a un grupo (ej. Centroamérica), zoom al grupo; si no, vista normal
+    const grupo = obtenerGrupoDePais(nombre);
+    if (grupo) {
+      zoomAPaises(GRUPOS_ZOOM[grupo], 30);
+    } else if (PAISES_ZOOM_INDIVIDUAL.includes(nombre)) {   // 👈 NUEVO
+      zoomAPaises([nombre], 40);                             // 👈 NUEVO
+    } else {
+      resetZoomMapa();
     }
   }
 }

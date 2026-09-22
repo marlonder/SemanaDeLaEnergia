@@ -5,8 +5,11 @@ fetch('include/header.html')
   .then(data => {
     document.getElementById('header').innerHTML = data;
 
-    // 👉 Ahora sí existen los elementos del header, enganchamos los eventos aquí
+    
     inicializarControlesHeader();
+
+    
+    document.dispatchEvent(new CustomEvent('header:listo'));
   });
 
 fetch('include/footer.html')
@@ -16,7 +19,7 @@ fetch('include/footer.html')
   });
 
 
-// Boton de refrescar (y lo que necesites del buscador)
+// Boton de refrescar 
 function inicializarControlesHeader() {
   const btnRefrescar = document.getElementById('btn-refrescar');
   const iconoRefrescar = btnRefrescar.querySelector('.btn-refrescar__icono');

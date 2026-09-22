@@ -178,6 +178,7 @@ body {
   font-size: 1.3rem;
   color: #ffffff;
   background: var(--sde-navy-dark);
+  text-align: left;
 }
 
 .panel-info__contenido {
@@ -499,7 +500,7 @@ body {
 .lista-proyectos__item {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   padding: 10px 12px;
   border-bottom: 1px solid #e5e5e5;
@@ -514,9 +515,11 @@ body {
   font-weight: 500;
   white-space: normal;
   word-break: normal;
-  text-align: justify;
+  text-align: left;
   overflow-wrap: break-word;
   line-height: 1.3;
+  align-self: flex-start ;
+  width: 100%;
 }
 
 .lista-proyectos__meta {
